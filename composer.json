@@ -1,0 +1,44 @@
+{
+    "name": "raffaelj/cpmultiplane-docs",
+    "description": "Skeleton to use CpMultiplane and Cockpit CMS as libraries with a clean root directory",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Raffael Jesche",
+            "homepage": "https://www.rlj.me"
+        }
+    ],
+    "require": {
+        "raffaelj/cpmultiplane": "dev-master",
+        "raffaelj/cockpit-imageresize": "^0.2.0",
+        "raffaelj/cockpit-bettermarkdown": "^0.1.0",
+        "raffaelj/cockpit-rljutils": "dev-master"
+    },
+    "config": {
+        "vendor-dir": "lib/vendor",
+        "preferred-install": {
+            "*": "dist"
+        }
+    },
+    "extra": {
+        "installer-types": [
+            "project",
+            "library"
+        ],
+        "installer-paths": {
+            "lib/{$name}": [
+                "type:project"
+            ],
+            "cpdata/addons/{$name}": [
+                "type:cockpit-module"
+            ]
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "cp lib/cockpit/cp ./cp && cp ./cp ./mp",
+            "php ./mp multiplane/update-htaccess"
+        ]
+    }
+}
