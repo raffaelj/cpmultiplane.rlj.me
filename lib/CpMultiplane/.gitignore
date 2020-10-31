@@ -1,0 +1,31 @@
+# common cockpit dir names
+/cockpit
+/admin
+
+# custom files and directories
+/Controller
+/addons
+/config
+/themes
+defines.php
+.htaccess
+robots.txt
+sitemap.xml
+.env
+
+# common user files and directories
+/assets
+/views
+/data
+favicon.ico
+
+# dev files and directories
+/tests
+.sass-cache
+node_modules
+package-lock.json
+/lib/vendor
+composer.lock
+
+# editor/os files
+*.kate-swp
