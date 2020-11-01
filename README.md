@@ -4,6 +4,14 @@ This is the official docs repository for [CpMultiplane][2]. It is based on the [
 
 Customizations to the core are made in `cpdata/addons/mpdocs`.
 
+## How to edit docs
+
+Fork this repo, change the content of the md files inside the `docs` folder and send a pull request.
+
+Or run this repo on your local dev machine and edit all contents with cockpit in your browser. Than send a pull request.
+
+I'll than check your changes manually and apply the updates on the remote host.
+
 ## run locally
 
 I expect, that docker and docker-compose are installed.
