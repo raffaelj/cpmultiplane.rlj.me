@@ -17,6 +17,7 @@ $app->helper('admin')->addAssets([
     'cpmultiplanedocs:assets/mpdocs-htmleditor-mod.js',
     'cpmultiplanedocs:assets/link-collectionitem.tag',
     'cpmultiplanedocs:assets/cp-search.tag',
+    'cpmultiplanedocs:assets/cp-account.tag',
 ]);
 
 ////////////// skip accounts and login
