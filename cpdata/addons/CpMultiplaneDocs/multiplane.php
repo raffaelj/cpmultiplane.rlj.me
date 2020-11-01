@@ -25,12 +25,16 @@ $app->on('multiplane.page', function(&$page, &$posts, &$site) {
 
     if ($this->filestorage->has($cachepath)) {
 
+        $_toc = \json_decode($this->filestorage->read($cachepath), true);
+
+        if (empty($_toc)) return;
+
         // create tree from reformatted toc
         $toc = [
             'title' => 'ToC',
             'url'   => '#',
             'class' => 'toc',
-            'children' => \json_decode($this->filestorage->read($cachepath), true)
+            'children' => $_toc
         ];
 
     }
