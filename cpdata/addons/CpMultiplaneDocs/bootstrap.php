@@ -74,6 +74,12 @@ $app->on('collections.find.after.pages', function($collection, &$entries) {
 // add hashes of md content
 $app->on('collections.save.before', function ($name, &$entry, $isUpdate) {
 
+    // set empty strings to null, otherwise the default fallback for empty entries to the
+    // default language (en) doesn't work
+    foreach ($entry as &$v) {
+        if ($v === '') $v = null;
+    }
+
     foreach (['', '_de'] as $suffix) {
 
         if (isset($entry['content'.$suffix])) {
