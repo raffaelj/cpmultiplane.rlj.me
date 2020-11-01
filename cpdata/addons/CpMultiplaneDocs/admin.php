@@ -25,6 +25,13 @@ $app->helper('admin')->addAssets([
 $this->bind('/install',  function() {return 'nice try ;-)';});
 $this->bind('/install/', function() {return 'nice try ;-)';});
 
+foreach(['/accounts', '/accounts/*'] as $route) {
+    $this->bind($route, function() {
+        $this['user'] = $this->module('cockpit')->getUser();
+        return $this->view('cpmultiplanedocs:views/partials/account.php with cockpit:views/layouts/app.php');
+    });
+}
+
 // set current user if defined via env vars
 if (getenv('MPDOCS_ENVIRONMENT') === 'DEVELOPMENT' && (int) getenv('MPDOCS_SKIP_LOGIN') === 1) {
 
