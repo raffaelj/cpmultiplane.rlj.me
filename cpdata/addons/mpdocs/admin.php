@@ -8,16 +8,16 @@ $app->on('admin.init', function() {
 // add partial for notifications
 $app->on('collections.entry.aside', function($collection) {
 
-    echo $this->renderView('cpmultiplanedocs:views/partials/alert.php', compact('collection'));
+    echo $this->renderView('mpdocs:views/partials/alert.php', compact('collection'));
 
 });
 
 // add assets
 $app->helper('admin')->addAssets([
-    'cpmultiplanedocs:assets/mpdocs-htmleditor-mod.js',
-    'cpmultiplanedocs:assets/link-collectionitem.tag',
-    'cpmultiplanedocs:assets/cp-search.tag',
-    'cpmultiplanedocs:assets/cp-account.tag',
+    'mpdocs:assets/mpdocs-htmleditor-mod.js',
+    'mpdocs:assets/link-collectionitem.tag',
+    'mpdocs:assets/cp-search.tag',
+    'mpdocs:assets/cp-account.tag',
 ]);
 
 ////////////// skip accounts and login
@@ -29,7 +29,7 @@ $this->bind('/install/', function() {return 'nice try ;-)';});
 foreach(['/accounts', '/accounts/*'] as $route) {
     $this->bind($route, function() {
         $this['user'] = $this->module('cockpit')->getUser();
-        return $this->view('cpmultiplanedocs:views/partials/account.php with cockpit:views/layouts/app.php');
+        return $this->view('mpdocs:views/partials/account.php with cockpit:views/layouts/app.php');
     });
 }
 
@@ -107,7 +107,7 @@ $this->on('admin.dashboard.widgets', function($widgets) {
 
     $widgets[] = [
         'name'    => 'mpdocs_problems',
-        'content' => $this->view('cpmultiplanedocs:views/widgets/problems.php', compact('todos', 'problems')),
+        'content' => $this->view('mpdocs:views/widgets/problems.php', compact('todos', 'problems')),
         'area'    => 'main'
     ];
 
