@@ -7,19 +7,17 @@ $app->path('#flatfiles', MPDOCS_FLATFILE_DIR);
 // store updated markdown content in `storage/flatfiles/`
 $app->on('collections.save.after', function ($name, &$entry) {
 
-    if (isset($entry['content'])) {
+    foreach (['en', 'de'] as $lang) {
 
-        $filename = !empty($entry['permalink']) ? \ltrim($entry['permalink'], '/') : $entry['slug'];
+        $suffix = $lang == 'en' ? '' : '_'.$lang;
 
-        $this('fs')->write("#flatfiles:{$filename}.md", $entry['content']);
+        if (isset($entry['content'.$suffix]) && isset($entry['permalink'.$suffix])) {
 
-    }
+            $filename = \ltrim($entry['permalink'.$suffix], '/');
 
-    if (isset($entry['content_de'])) {
+            $this('fs')->write("#flatfiles:{$filename}.md", $entry['content'.$suffix]);
 
-        $filename = !empty($entry['permalink_de']) ? \ltrim($entry['permalink_de'], '/') : $entry['slug'];
-
-        $this('fs')->write("#flatfiles:{$filename}.md", $entry['content_de']);
+        }
 
     }
 
@@ -35,7 +33,9 @@ $app->on('collections.find.after.pages', function($collection, &$entries) {
 
     foreach ($entries as &$entry) {
 
-        foreach (['', '_de'] as $suffix) {
+        foreach (['en', 'de'] as $lang) {
+
+            $suffix = $lang == 'en' ? '' : '_'.$lang;
 
             if (!empty($entry['permalink'.$suffix])) {
 
@@ -54,6 +54,8 @@ $app->on('collections.find.after.pages', function($collection, &$entries) {
                             'file'    => $filename.'.md',
                             'message' => "The file didn't match with the stored content in the database. If you want to revert the changes, select the last revision.",
                             'hash'    => $hash,
+                            '_id'     => $entry['_id'],
+                            'lang'    => $lang,
                         ];
 
                     }
@@ -80,7 +82,9 @@ $app->on('collections.save.before', function ($name, &$entry, $isUpdate) {
         if ($v === '') $v = null;
     }
 
-    foreach (['', '_de'] as $suffix) {
+    foreach (['en', 'de'] as $lang) {
+
+        $suffix = $lang == 'en' ? '' : '_'.$lang;
 
         if (isset($entry['content'.$suffix])) {
 
