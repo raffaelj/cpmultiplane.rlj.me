@@ -60,6 +60,29 @@ if (getenv('MPDOCS_ENVIRONMENT') === 'DEVELOPMENT' && (int) getenv('MPDOCS_SKIP_
 // dashboard widget
 $this->on('admin.dashboard.widgets', function($widgets) {
 
+    // check for problems
+
+    // because of the simple 2-way-bind of md files, problems must be fetched first
+    $problems = [];
+
+    if ($this->storage->find('cockpit/accounts')->toArray()) {
+        $problems[] = [
+            'message' => 'Accounts exist. They should be disabled.',
+        ];
+    }
+
+    $entries = $this->module('collections')->find('pages');
+
+    if (!empty($this->viewvars['mpdocs_alert'])) {
+        foreach($this->viewvars['mpdocs_alert'] as $alert) {
+            $problems[] = [
+                'message' => $alert['message'],
+                'url' => $this->routeUrl('/collections/entry/pages/'.$alert['_id'].'?lang='.$alert['lang']),
+                'file' => $alert['file'],
+            ];
+        }
+    }
+
     // add all entries with string "to do" to dashboard widget
 
     $todos   = [];
@@ -81,8 +104,6 @@ $this->on('admin.dashboard.widgets', function($widgets) {
         ]);
 
     }
-
-    $problems = [];
 
     $widgets[] = [
         'name'    => 'mpdocs_problems',

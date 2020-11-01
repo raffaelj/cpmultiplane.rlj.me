@@ -40,7 +40,8 @@
         </div>
 
       @if(count($problems))
-        <div class="uk-flex">
+        <div class="uk-margin uk-panel-box uk-panel-card">
+        <div class="uk-flex uk-panel-box-header">
             <strong class="uk-panel-box-header-title uk-flex-item-1">
                 @lang('Problems')
             </strong>
@@ -49,17 +50,18 @@
 
         <div class="uk-margin {{ count($problems) > 5 ? 'uk-scrollable-box' : '' }}">
 
-            <ul class="uk-list uk-list-space uk-margin-top">
-                @foreach($problems as $col)
+            <ul class="uk-list uk-list-space">
+                @foreach($problems as $problem)
                 <li>
-                    <a href="@route('/collections/entry/pages/'.$col['_id'])" class="uk-text-muted">
-                        <i class="uk-icon-edit"></i>
-                        {{ htmlspecialchars($col['title']) }}
-                    </a>
+                    <i class="uk-icon-warning uk-text-danger"></i>
+                    @if(isset($problem['file']))<code>{{ $problem['file'] }}</code><br>@endif
+                    {{ $problem['message'] }}
+                    @if(isset($problem['url']))<a href="{{ $problem['url'] }}" class="uk-icon-link"></a>@endif
                 </li>
                 @endforeach
             </ul>
 
+        </div>
         </div>
       @endif
 
