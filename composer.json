@@ -11,6 +11,7 @@
     ],
     "require": {
         "raffaelj/cpmultiplane": "dev-master",
+        "aheinze/cockpit": "dev-next as 0.11.3-dev",
         "raffaelj/cockpit-imageresize": "^0.2.0",
         "raffaelj/cockpit-bettermarkdown": "^0.1.0",
         "raffaelj/cockpit-rljutils": "dev-master"
