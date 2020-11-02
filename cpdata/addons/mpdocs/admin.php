@@ -49,7 +49,7 @@ if (getenv('MPDOCS_ENVIRONMENT') === 'DEVELOPMENT' && (int) getenv('MPDOCS_SKIP_
         'email'  => '',
         'active' => true,
         'group'  => 'admin',
-        'i18n'   => $app->getClientLang(),
+        'i18n'   => getenv('MPDOCS_LANG') ?? $app->getClientLang(),
     ];
     $permanent = false;
     $app->module('cockpit')->setUser($user, $permanent);
