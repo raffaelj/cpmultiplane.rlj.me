@@ -48,7 +48,7 @@ Das Cockpit CMS kommt von Haus aus ohne Frontend. Es ist zur reinen Datenpflege 
 
 Cockpit bringt die wichtigsten libraries mit, ist aber insgesamt sehr simpel gehalten. Es ist modular erweiterbar und darauf ausgelegt auf individuelle Bedürfnisse angepasst zu werden.
 
-![CpMultiplane model simple](/docs/img/uploads/cpmultiplane-model-simple_opt.svg)
+![CpMultiplane model simple](/_docs/img/uploads/cpmultiplane-model-simple_opt.svg)
 
 ### Multiplane
 
@@ -80,7 +80,7 @@ Ein weiteres Theme ist "rljstripes", das hauptsächlich als Inspiration dienen s
 
 Setzt man nun alle Bausteine zusammen, sieht das Konstrukt ungefähr so aus:
 
-![CpMultiplane model](/docs/img/uploads/cpmultiplane-model_opt.svg)
+![CpMultiplane model](/_docs/img/uploads/cpmultiplane-model_opt.svg)
 
 ## Felder, bzw. strukturierte Daten
 

@@ -48,7 +48,7 @@ Cockpit CMS is headless without a frontend. It is created for pure data manageme
 
 Cockpit comes with the most important libraries, but in total it was kept clean and simple. It is modular extendible and was made to be customized to your individual needs.
 
-![CpMultiplane model simple](/docs/img/uploads/cpmultiplane-model-simple_opt.svg)
+![CpMultiplane model simple](/_docs/img/uploads/cpmultiplane-model-simple_opt.svg)
 
 ### Multiplane
 
@@ -82,7 +82,7 @@ The other theme "rljstripes" serves mainly as inspiration, how to create a child
 
 If you put all the components together, the cunstruct looks kind of like this:
 
-![CpMultiplane model](/docs/img/uploads/cpmultiplane-model_opt.svg)
+![CpMultiplane model](/_docs/img/uploads/cpmultiplane-model_opt.svg)
 
 ## Fields or data structure
 
