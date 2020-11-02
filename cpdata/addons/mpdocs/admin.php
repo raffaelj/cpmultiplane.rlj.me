@@ -26,6 +26,8 @@ $app->helper('admin')->addAssets([
 $this->bind('/install',  function() {return 'nice try ;-)';});
 $this->bind('/install/', function() {return 'nice try ;-)';});
 
+$this->bind('/auth/*', function() {$this->stop('Accounts are disabled', 412);});
+
 foreach(['/accounts', '/accounts/*'] as $route) {
     $this->bind($route, function() {
         $this['user'] = $this->module('cockpit')->getUser();
