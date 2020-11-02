@@ -50,7 +50,7 @@
       'label' => '',
       'type' => 'text',
       'default' => '',
-      'info' => 'used for markdown file bindings; has no effect for actual permalinks, yet',
+      'info' => 'also used for markdown file bindings',
       'group' => '',
       'localize' => true,
       'options' => 
@@ -163,11 +163,29 @@
       ),
       'required' => false,
     ),
+    8 => 
+    array (
+      'name' => 'redirect_to',
+      'label' => '',
+      'type' => 'text',
+      'default' => '',
+      'info' => '',
+      'group' => 'config',
+      'localize' => true,
+      'options' => 
+      array (
+      ),
+      'width' => '1-1',
+      'lst' => true,
+      'acl' => 
+      array (
+      ),
+    ),
   ),
   'sortable' => true,
   'in_menu' => false,
   '_created' => 1595174861,
-  '_modified' => 1604259472,
+  '_modified' => 1604335393,
   'color' => '',
   'acl' => 
   array (
