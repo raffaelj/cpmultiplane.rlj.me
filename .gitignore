@@ -13,9 +13,10 @@ composer.lock
 # changes frequently without relevant data
 cockpit.memory.sqlite
 
-# contains sensitive data
+# contains sensitive data (not anymore)
 # cockpit.sqlite
-*.sqlite
+# *.sqlite
+/.env
 
 # local files - either generated with composer or added manually
 # delete/modify this part in your actual project to keep everything in version control
@@ -24,12 +25,11 @@ cockpit.memory.sqlite
 # /cpdata/config/
 # /cpdata/storage/*/*
 # /.htaccess
-/.env
 # /cp
 # /mp
 /Dockerfile
-/docs
-/docker-compose.yml
+# /_docs
+# /docker-compose.yml
 # /README.md
 # /.gitignore
-/.env.dist
+# /.env.dist
