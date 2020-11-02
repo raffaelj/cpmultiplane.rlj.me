@@ -41,7 +41,7 @@ define('MP_ENV_ROOT',       str_replace(DIRECTORY_SEPARATOR, '/', __DIR__));
 
 
 // store uploaded files in /docs/img
-define('COCKPIT_PUBLIC_STORAGE_FOLDER',  str_replace(DIRECTORY_SEPARATOR, '/', __DIR__).'/docs/img');
+define('COCKPIT_PUBLIC_STORAGE_FOLDER',  str_replace(DIRECTORY_SEPARATOR, '/', __DIR__).'/_docs/img');
 
 // store synced md files in /docs
-define('MPDOCS_FLATFILE_DIR',  str_replace(DIRECTORY_SEPARATOR, '/', __DIR__).'/docs');
+define('MPDOCS_FLATFILE_DIR',  str_replace(DIRECTORY_SEPARATOR, '/', __DIR__).'/_docs');
