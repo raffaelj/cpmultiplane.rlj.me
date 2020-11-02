@@ -11,6 +11,7 @@ return [
 
     'multiplane' => [
         'profile' => 'mpdocs',
+        'usePermalinks' => true,
 //         'debug' => ['lexy' => true],
     ],
 

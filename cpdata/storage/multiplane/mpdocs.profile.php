@@ -4,13 +4,13 @@ return [
   'label' => 'CpMultiplane Docs',
   '_id' => 'mpdocs',
   '_created' => 1595175169,
-  '_modified' => 1604161328,
+  '_modified' => 1604316221,
   'search' => [
     'enabled' => true,
   ],
   'pages' => 'pages',
   'siteSingleton' => 'site',
-  'slugName' => 'slug',
+  'slugName' => 'permalink',
   'theme' => 'mpdocs',
   'use' => [
     'collections' => [
