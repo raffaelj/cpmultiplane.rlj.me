@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "raffaelj/cpmultiplane": "dev-master",
+        "raffaelj/cpmultiplane": "dev-add-permalink-support as 0.2.5-dev",
         "aheinze/cockpit": "dev-next as 0.11.3-dev",
         "raffaelj/cockpit-imageresize": "^0.2.0",
         "raffaelj/cockpit-bettermarkdown": "^0.1.0",
