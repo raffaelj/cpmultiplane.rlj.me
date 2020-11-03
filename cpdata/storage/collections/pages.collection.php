@@ -99,7 +99,7 @@
         ),
       ),
       'width' => '1-1',
-      'lst' => true,
+      'lst' => false,
       'acl' => 
       array (
       ),
@@ -157,7 +157,7 @@
       array (
       ),
       'width' => '1-3',
-      'lst' => true,
+      'lst' => false,
       'acl' => 
       array (
       ),
@@ -176,7 +176,7 @@
       array (
       ),
       'width' => '1-1',
-      'lst' => true,
+      'lst' => false,
       'acl' => 
       array (
       ),
@@ -185,7 +185,7 @@
   'sortable' => true,
   'in_menu' => false,
   '_created' => 1595174861,
-  '_modified' => 1604335393,
+  '_modified' => 1604433444,
   'color' => '',
   'acl' => 
   array (
