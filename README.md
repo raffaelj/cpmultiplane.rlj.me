@@ -30,6 +30,16 @@ stop: `docker-compose down`
 
 ## Update on remote
 
+### install
+
+```bash
+ssh user@host
+cd ~/html
+git clone https://github.com/raffaelj/cpmultiplane.rlj.me.git .
+```
+
+### update
+
 ```bash
 ssh user@host
 cd ~/html
