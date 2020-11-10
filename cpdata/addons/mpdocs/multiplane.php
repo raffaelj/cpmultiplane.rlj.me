@@ -4,10 +4,12 @@
 $app->on('multiplane.page', function(&$page, &$posts, &$site) {
 
     // quick and dirty redirect option for empty parent pages
-    if (!empty($page['redirect_to']) && is_string($page['redirect_to'])) {
+    if (!empty($page['redirect_to']) && \is_string($page['redirect_to'])) {
         $this->reroute($page['redirect_to']);
         $this->stop();
     }
+
+    if (empty($page['content_hash'])) return;
 
     // walk through nav tree and apply toc to active element
     function apply_toc_to_nav($nav, $toc) {
