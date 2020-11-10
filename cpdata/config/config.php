@@ -11,8 +11,15 @@ return [
 
     'multiplane' => [
         'profile' => 'mpdocs',
-        'usePermalinks' => true,
-//         'debug' => ['lexy' => true],
+        'pageTypes' => [
+            'page',
+            'addon',
+            'theme',
+        ],
+        'debug' => [
+//             'lexy'    => true,
+//             'overlay' => true,
+        ],
     ],
 
     'unique_slugs' => [

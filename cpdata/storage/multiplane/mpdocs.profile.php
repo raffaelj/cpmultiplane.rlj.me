@@ -4,7 +4,7 @@ return [
   'label' => 'CpMultiplane Docs',
   '_id' => 'mpdocs',
   '_created' => 1595175169,
-  '_modified' => 1604316221,
+  '_modified' => 1605019041,
   'search' => [
     'enabled' => true,
   ],
@@ -28,4 +28,5 @@ Suggested: BetterMarkdown addon',
   ],
   'displayBreadcrumbs' => true,
   'isMultilingual' => true,
+  'usePermalinks' => true,
 ];
