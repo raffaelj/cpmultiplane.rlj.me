@@ -24,7 +24,10 @@ services:
       # mount git repos for local development
       #- ${COCKPIT_REPO}:/var/www/html/lib/cockpit
       #- ${CPMULTIPLANE_REPO}:/var/www/html/lib/CpMultiplane
+
       #- ${COCKPIT_ADDONS_REPOS}/cockpit_phpLiteAdmin:/var/www/html/cpdata/addons/phpLiteAdmin
+      #- ${COCKPIT_ADDONS_REPOS}/cockpit_BetterMarkdown:/var/www/html/cpdata/addons/BetterMarkdown
+      #- ${COCKPIT_ADDONS_REPOS}/cockpit_CpMultiplaneGUI:/var/www/html/cpdata/addons/CpMultiplaneGUI
 
     ports:
       - ${PORT:-8080}:80
