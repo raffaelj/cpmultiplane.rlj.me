@@ -1,19 +1,19 @@
 <?php
 
 // add viewvar for notifications
-$app->on('admin.init', function() {
+$this->on('admin.init', function() {
     if (!isset($this->viewvars['mpdocs_alert'])) $this->viewvars['mpdocs_alert'] = [];
 });
 
 // add partial for notifications
-$app->on('collections.entry.aside', function($collection) {
+$this->on('collections.entry.aside', function($collection) {
 
     echo $this->renderView('mpdocs:views/partials/alert.php', compact('collection'));
 
 });
 
 // add assets
-$app->helper('admin')->addAssets([
+$this->helper('admin')->addAssets([
     'mpdocs:assets/mpdocs-htmleditor-mod.js',
     'mpdocs:assets/link-collectionitem.tag',
     'mpdocs:assets/cp-search.tag',
@@ -51,10 +51,10 @@ if (getenv('MPDOCS_ENVIRONMENT') === 'DEVELOPMENT' && (int) getenv('MPDOCS_SKIP_
         'email'  => '',
         'active' => true,
         'group'  => 'admin',
-        'i18n'   => getenv('MPDOCS_LANG') ?? $app->getClientLang(),
+        'i18n'   => getenv('MPDOCS_LANG') ?? $this->getClientLang(),
     ];
     $permanent = false;
-    $app->module('cockpit')->setUser($user, $permanent);
+    $this->module('cockpit')->setUser($user, $permanent);
 
 }
 
