@@ -1,6 +1,6 @@
 # CpMultiplane
 
-CpMultiplane is a simple, lightweight php frontend, that is based on the fast and headless [Cockpit CMS][1]. It is meant to be used by developers, who need a base to create individual websites. If you search for a One-Click-Solution, this is the wrong place for you.
+CpMultiplane is a simple, lightweight php frontend, that is based on the fast and headless [Cockpit CMS][1]. It is meant to be used by developers, who need a base to create individual websites. If you search for a one-click solution, this is the wrong place for you.
 
 CpMultiplane is not finished, yet, but I already use it in production for a few small websites.
 
@@ -8,9 +8,10 @@ CpMultiplane is not finished, yet, but I already use it in production for a few 
 
 [Source][2]{.button} [Docs][5]{.button}
 
-* [Cockpit source][3]
-* [Cockpit docs][4]
-* [inofficial Cockpit docs][6]
+* [Docs source][8]
+* [CpMultiplane i18n][9], [Cockpit i18n][10]
+* [Cockpit][11], [Cockpit source][3]
+* [Cockpit docs][4], [inofficial Cockpit docs][6]
 * [Thread in Cockpit support forum][7]
 
 ## My main goals
@@ -133,3 +134,7 @@ to do...
 [5]: https://cpmultiplane.rlj.me
 [6]: https://zeraton.gitlab.io/cockpit-docs/
 [7]: https://discourse.getcockpit.com/t/monoplane-cpmultiplane-simple-php-frontend-that-uses-cockpit-as-a-library/720
+[8]: https://github.com/raffaelj/cpmultiplane.rlj.me
+[9]: https://github.com/raffaelj/CpMultiplane-i18n
+[10]: https://github.com/agentejo/cockpit-i18n
+[11]: https://getcockpit.com/

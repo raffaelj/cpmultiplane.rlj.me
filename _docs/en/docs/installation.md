@@ -129,7 +129,10 @@ Folder structure:
 CPMULTIPLANE_REPO=/path/to/local/CpMultiplane-repository
 COCKPIT_REPO=/path/to/local/cockpit-repository
 COCKPIT_ADDONS_REPOS=/path/to/local/parent-dir-of-cockpit-addons-repositories
-PORT=8080
+
+# Expose 192.168.1.x:8080 to LAN for cross device testing
+PORT=0.0.0.0:8080
+
 DOCKER_USER=1000
 DOCKER_GROUP=1000
 ```
@@ -172,7 +175,7 @@ services:
       - ${COCKPIT_ADDONS_REPOS}/cockpit_UniqueSlugs/:/var/www/html/data/cp/addons/UniqueSlugs
 
     ports:
-      - ${PORT:-8080}:80
+      - ${PORT:-127.0.0.1:8080}:80
 
     # apache can't start without that fix if the user was changed
     # see https://hub.docker.com/_/php/ (scroll down to "Running as an arbitrary user")
