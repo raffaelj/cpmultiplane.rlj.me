@@ -10,11 +10,11 @@
         }
     ],
     "require": {
-        "raffaelj/cpmultiplane": "dev-add-permalink-support as 0.2.5-dev",
+        "raffaelj/cpmultiplane": "dev-master as 0.3.0-dev",
         "aheinze/cockpit": "dev-next as 0.11.3-dev",
-        "raffaelj/cockpit-imageresize": "^0.2.0",
+        "raffaelj/cockpit-imageresize": "^0.2.1",
         "raffaelj/cockpit-bettermarkdown": "dev-master",
-        "raffaelj/cockpit-rljutils": "dev-master",
+        "raffaelj/cockpit-rljutils": "^0.1.4",
         "raffaelj/cockpit-cpmultiplanegui": "dev-master as 0.2.3-dev"
     },
     "config": {
@@ -24,10 +24,7 @@
         }
     },
     "extra": {
-        "installer-types": [
-            "project",
-            "library"
-        ],
+        "installer-types": ["project"],
         "installer-paths": {
             "lib/{$name}": [
                 "type:project"

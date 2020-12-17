@@ -9,10 +9,15 @@ App.$(document).on('init-wysiwyg-editor', function(e, editor) {
                 width = '800',
                 height = '',
                 method = 'bestFit'
-                quality = '80'
-                options = [],
-                asset = {},
+                quality = '80',
+                options = {
+                    selected: [],
+                    typefilter: ''
+                },
+                currentAsset = {},
                 asset_id = null,
+//                 asset_path = null, // to do...
+//                 asset_size = null, // to do...
                 src = node.getAttribute('src');
 
             if (src) {
@@ -35,25 +40,26 @@ App.$(document).on('init-wysiwyg-editor', function(e, editor) {
     '<div class="uk-modal-header uk-text-large">'+App.i18n.get('Select asset')+'</div>',
     '<cp-assets path="'+(options.path || '')+'" typefilter="'+(options.typefilter || '')+'" modal="true"></cp-assets>',
     '<div class="uk-grid">',
-        '<div class="uk-panel uk-width-1-3 uk-width-medium-1-6">',
+        '<div class="uk-width-1-3 uk-width-medium-1-6">',
             '<label class="uk-display-block uk-margin-small">'+App.i18n.get('Width')+'</label>',
             '<input class="uk-width-1-1" type="number" value="'+width+'" steps="10" data-width />',
         '</div>',
-        '<div class="uk-panel uk-width-1-3 uk-width-medium-1-6">',
+        '<div class="uk-width-1-3 uk-width-medium-1-6">',
             '<label class="uk-display-block uk-margin-small">'+App.i18n.get('Height')+'</label>',
             '<input class="uk-width-1-1" type="number" value="'+height+'" steps="10" data-height />',
         '</div>',
-        '<div class="uk-panel uk-width-1-3 uk-width-medium-1-6">',
+        '<div class="uk-width-1-3 uk-width-medium-1-6">',
             '<label class="uk-display-block uk-margin-small">'+App.i18n.get('Method')+'</label>',
             '<select class="uk-width-1-1" data-method>',
                 '<option value="bestFit"'+ (method == 'bestFit' && ' selected') +'>bestFit</option>',
                 '<option value="thumbnail"'+ (method == 'thumbnail' && ' selected') +'>thumbnail</option>',
             '</select>',
         '</div>',
-        '<div class="uk-panel uk-width-1-3 uk-width-medium-1-6">',
+        '<div class="uk-width-1-3 uk-width-medium-1-6">',
             '<label class="uk-display-block uk-margin-small">'+App.i18n.get('Quality')+'</label>',
             '<input class="uk-width-1-1" type="number" value="'+quality+'" steps="5" min="0" max="100" data-quality />',
         '</div>',
+        '<div class="uk-width-1-3 uk-width-medium-1-6"><getimage-sizes></getimage-sizes></div>',
     '</div>',
     '<div class="uk-modal-footer uk-text-right">',
         '<button class="uk-button uk-button-primary uk-margin-right uk-button-large js-select-button">'+App.i18n.get('Select')+'</button>',
@@ -69,11 +75,12 @@ App.$(document).on('init-wysiwyg-editor', function(e, editor) {
             riot.mount(dialog.element[0], '*', options);
 
             var selectButton    = dialog.dialog.find('.js-select-button'),
-                assetsComponent = dialog.dialog.find('cp-assets')[0]._tag;
+                assetsComponent = dialog.dialog.find('cp-assets')[0]._tag,
+                sizeComponent   = dialog.dialog.find('getimage-sizes')[0]._tag;
 
             selectButton.on('click', function() {
 
-                if (!asset || !asset.mime) {
+                if (!currentAsset || !currentAsset.mime) {
                     App.ui.notify('No image selected', 'danger');
                     return;
                 }
@@ -82,24 +89,38 @@ App.$(document).on('init-wysiwyg-editor', function(e, editor) {
                     height  = dialog.dialog.find('[data-height]')[0].value,
                     method  = dialog.dialog.find('[data-method]')[0].value,
                     quality = dialog.dialog.find('[data-quality]')[0].value,
+                    size    = sizeComponent ? sizeComponent.root.querySelector('select').value : null;
                     content = '';
 
-                if (asset.mime.match(/^image\//)) {
+                if (currentAsset.mime.match(/^image\//)) {
 
-                    // might break with sub folders... needs some more tests
-                    // var src = SITE_URL + '/getImage?src=' + asset._id;
-                    var src = MP_SITE_URL + '/getImage?src=' + asset._id;
+                    var src = '';
 
-                    // skip default and empty values
-                    if (!!width.trim() && width != '800')       src += '&w=' + width;
-                    if (!!height.trim())                        src += '&h=' + height;
-                    if (!!method.trim() && method != 'bestFit') src += '&m=' + method;
-                    if (!!quality.trim() && quality != '80')    src += '&q=' + quality;
+                    // if asset has predefined sizes (ImageResize addon), use these
+                    if (size && currentAsset.sizes && currentAsset.sizes[size]) {
+                        src = ASSETS_URL+currentAsset.sizes[size].path;
+                    }
 
-                    content = '<img src="'+ src +'" alt="'+(asset.title || 'image')+'">';
+                    // use getImage route to resize image on the fly
+                    else {
+
+                        // might break with sub folders... needs some more tests
+                        // var src = SITE_URL + '/getImage?src=' + asset._id;
+                        src = MP_SITE_URL + '/getImage?src=' + currentAsset._id;
+
+                        // skip default and empty values
+                        if (!!width.trim() && width != '800')       src += '&w=' + width;
+                        if (!!height.trim())                        src += '&h=' + height;
+                        if (!!method.trim() && method != 'bestFit') src += '&m=' + method;
+                        if (!!quality.trim() && quality != '80')    src += '&q=' + quality;
+
+                    }
+
+                    content = '<img src="'+ src +'" alt="'+(currentAsset.title || 'image')+'">';
+
                 } else {
                     // to do...
-                    content = '<a href="' + ASSETS_URL+asset.path + '">'+asset.title+'<a>';
+                    content = '<a href="' + ASSETS_URL+currentAsset.path + '">'+currentAsset.title+'<a>';
                 }
 
                 ed.insertContent(content);
@@ -116,8 +137,14 @@ App.$(document).on('init-wysiwyg-editor', function(e, editor) {
                     s = s.slice(-1);
                     assetsComponent.selected = s;
 
-                    asset = s[0];
+                    currentAsset = s[0];
 
+                    sizeComponent.currentAsset = currentAsset;
+                    sizeComponent.update();
+
+                } else {
+                    sizeComponent.currentAsset = {};
+                    sizeComponent.update();
                 }
 
             });
@@ -132,7 +159,7 @@ App.$(document).on('init-wysiwyg-editor', function(e, editor) {
                             return obj._id === asset_id;
                         });
 
-                        asset = selectedAsset;
+                        currentAsset = selectedAsset;
 
                         assetsComponent.selected.push(selectedAsset);
                         assetsComponent.update();
@@ -140,6 +167,8 @@ App.$(document).on('init-wysiwyg-editor', function(e, editor) {
                     }, 500);
 
                 }
+
+                // to do: extract path (of img profile) to autoselect the current image
 
             });
 

@@ -4,10 +4,10 @@ if ($this['debug']) \error_reporting(E_ALL);
 
 //set version
 if (!$this->retrieve('multiplane/version', false)) {
-    $this->set('multiplane/version', $this['debug'] ? time()
+    $this->set('multiplane/version', $this['debug'] ? \time()
         : \json_decode($this->helper('fs')->read(MP_DIR.'/package.json'), true)['version']);
 }
-$this->set('cockpit/version', \json_decode($this('fs')->read('#root:package.json'), true)['version']);
+$this->set('cockpit/version', \json_decode($this->helper('fs')->read('#root:package.json'), true)['version']);
 
 if (!MP_SELF_EXPORT) {
     require_once(__DIR__ . '/override.php');
@@ -20,7 +20,7 @@ $this->path('mp_config', MP_ENV_ROOT . '/config');
 
     // register autoload classes in namespace Multiplane\Controller from
     // `MP_DIR/Controller`, e. g.: `/Controller/Products.php`
-    $class_path = MP_ENV_ROOT.'/Controller'.str_replace(['Multiplane\Controller', '\\'], ['', '/'], $class).'.php';
+    $class_path = MP_ENV_ROOT.'/Controller'.\str_replace(['Multiplane\Controller', '\\'], ['', '/'], $class).'.php';
     if (\file_exists($class_path)) include_once($class_path);
 
     // autoload from /modules/Multiplane/lib
@@ -42,10 +42,10 @@ $this->module('multiplane')->extend([
     'parentThemeBootstrap'  => true,
 
     'isMultilingual'        => false,
-    'usePermalinks'         => false,
+    'usePermalinks'         => false,             // use permalinks (experimental)
     'disableDefaultRoutes'  => false,             // don't use any default routes
     'outputMethod'          => 'dynamic',         // to do: static or pseudo static/cached
-    'pageTypeDetection'     => 'collections',     // 'collections' or 'type' (experimental)
+    'pageTypeDetection'     => 'collections',     // 'collections' or 'type'
     'nav'                   => null,              // hard coded navigation
 
     'use' => [
@@ -78,6 +78,7 @@ $this->module('multiplane')->extend([
         'logo'              => 'logo',            // only in site
         'tags'              => 'tags',
         'category'          => 'category',        // not used for now, will be like tags
+        'contactform'       => 'contactform',
     ],
 
     // maintenance mode
@@ -286,9 +287,9 @@ $this->module('multiplane')->extend([
             $populate     = false;
             $fieldsFilter = ['lang' => $this->lang];
 
-            // to do: trigger multiplane.getpage.before
-
             foreach ($this->use['collections'] as $collection) {
+
+                $this->app->trigger('multiplane.getpage.permalink.before', [$collection, &$filter, &$projection, &$populate, &$fieldsFilter]);
 
                 $page = $this->app->module('collections')->findOne($collection, $filter, $projection, $populate, $fieldsFilter);
 
@@ -807,7 +808,7 @@ $this->module('multiplane')->extend([
 
         else {
             // allow array input or string with white space delimiter
-            $ips = \is_array($ips) ? $ips : \explode(' ', trim($ips));
+            $ips = \is_array($ips) ? $ips : \explode(' ', \trim($ips));
 
             if (\in_array($this->app->getClientIp(), $ips)) {
                 $this->clientIpIsAllowed = true;
@@ -848,7 +849,9 @@ $this->module('multiplane')->extend([
             if ($key == 'fieldNames') {
                 $fieldNames = $this->fieldNames;
                 foreach ($val as $fieldName => $replacement) {
-                    $fieldNames[$fieldName] = $replacement;
+                    if (\is_string($replacement) && !empty(\trim($replacement))) {
+                        $fieldNames[$fieldName] = \trim($replacement);
+                    }
                 }
                 $this->fieldNames = $fieldNames;
             } else {
@@ -1004,29 +1007,9 @@ $this->module('multiplane')->extend([
 
         foreach ($this->lexy as $k => $v) {
 
-            if (\is_string($v)) {
+            $pattern = '/(\s*)@'.\preg_quote($k, '/').'\((.+?)\)/';
 
-                if ($v == 'raw') {
-                    $this->app->renderer->extend(function($content) use ($k) {
-                        return \preg_replace('/(\s*)@'.$k.'\((.+?)\)/', '$1<?php echo MP_BASE_URL; $app->base("#uploads:" . ltrim($2, "/")); ?>', $content);
-                    });
-                    continue;
-                }
-
-                else {
-                    continue; // to do: custom callbacks...
-                }
-
-            }
-
-            $pattern = '/(\s*)@'.$k.'\((.+?)\)/';
-
-            $replacement = '$1<?php echo MP_BASE_URL."/getImage?src=".urlencode($2)';
-            if (isset($v['width'])   && $v['width'])    $replacement .= '."&w=".$app->module(\'multiplane\')->get("lexy/'.$k.'/width", '   . $v['width'].')';
-            if (isset($v['height'])  && $v['height'])   $replacement .= '."&h=".$app->module(\'multiplane\')->get("lexy/'.$k.'/height", '  . $v['height'].')';
-            if (isset($v['quality']) && $v['quality'])  $replacement .= '."&q=".$app->module(\'multiplane\')->get("lexy/'.$k.'/quality", ' . $v['quality'].')';
-            if (isset($v['method'])  && $v['method'])   $replacement .= '."&m=".$app->module(\'multiplane\')->get("lexy/'.$k.'/method", "' . $v['method'].'")';
-            $replacement .= '; ?>';
+            $replacement = '$1<?php echo $app->module(\'multiplane\')->imageUrl($2, \''.$k.'\');?>';
 
             $this->app->renderer->extend(function($content) use ($pattern, $replacement) {
                 return \preg_replace($pattern, $replacement, $content);
@@ -1056,7 +1039,7 @@ $this->module('multiplane')->extend([
         $themedirs = [MP_DIR.'/modules/Multiplane/themes', MP_ENV_ROOT.'/themes'];
 
         foreach ($themedirs as $themedir) {
-            foreach($this('fs')->ls($themedir) as $dir) {
+            foreach ($this('fs')->ls($themedir) as $dir) {
 
                 if (!$dir->isDir()) continue;
 
@@ -1068,7 +1051,7 @@ $this->module('multiplane')->extend([
                     'path'   => $path,
                     'image'  => '',
                     'config' => \file_exists("{$path}/config/config.php") ? include("{$path}/config/config.php") : [],
-                    'info'   => \file_exists("{$path}/package.json") ? json_decode($this('fs')->read("{$path}/package.json")) : [],
+                    'info'   => \file_exists("{$path}/package.json") ? \json_decode($this('fs')->read("{$path}/package.json"), true) : [],
                 ];
 
                 if ( ($image = $this->app->pathToUrl("{$path}/screenshot.png"))
@@ -1124,6 +1107,96 @@ $this->module('multiplane')->extend([
         return $route;
 
     }, // end of getSubPageRoute()
+
+    /**
+     * @param string|array $src
+     * @param string $profile
+     * @return string
+     */
+    'imageUrl' => function($src, $profile = '') {
+
+        $asset = null;
+
+        if (\is_array($src)) {
+            $asset = $src;
+        }
+        elseif (\is_string($src)) {
+
+            // lazy check if path or id
+            $isId = \strpos($src, '.') === false;
+
+            if ($isId) {
+                $asset = $this->app->storage->findOne('cockpit/assets', ['_id'  => $src]);
+            }
+            else {
+                $src   = \str_replace('../', '', \rawurldecode($src));
+                $asset = $this->app->storage->findOne('cockpit/assets', ['path' => $src]);
+            }
+
+            if (!$asset) {
+                return !$isId ? $src : '';
+            }
+
+        }
+
+        if (!empty($profile)) {
+
+            if ($asset) {
+                if (isset($asset['sizes'][$profile]['path'])) {
+                    $path = $asset['sizes'][$profile]['path'];
+                }
+                elseif (isset($this->lexy[$profile]) && $this->lexy[$profile] === 'raw') {
+                    $path = $asset['path'];
+                }
+                else {
+                    // fallback to getImage route to create thumbs on the fly
+                    return $this->getImageUrl($asset['_id'], $profile);
+                }
+
+                $url = $this->app->pathToUrl('#uploads:'.\ltrim($path,'/'))
+                    ?? $this->app->filestorage->getUrl('assets://') . $path;
+
+                return $url;
+            }
+        }
+
+        return '';
+
+    }, // end of imageUrl
+
+    /**
+     * @param string $src
+     * @param string $profile
+     * @return string
+     */
+    'getImageUrl' => function($src, $profile) {
+
+        $options = $this->lexy[$profile] ?? false;
+
+        if (!$options || !\is_string($src)) return '';
+
+        // @uploads
+        if (\is_string($options) && $options === 'raw') {
+            return $this->app->pathToUrl("#uploads:{$src}");
+        }
+
+        // @thumbnail...
+        $url = $this->app->routeUrl('/getImage') . '?src='.$src;
+
+        $map = [
+            'width'   => 'w',
+            'height'  => 'h',
+            'quality' => 'q',
+            'method'  => 'm'
+        ];
+
+        foreach ($options as $k => $v) {
+            $url .= isset($map[$k]) ? "&{$map[$k]}={$v}" : '';
+        }
+
+        return $url;
+
+    }, // end of getImageUrl()
 
 ]);
 

@@ -16,11 +16,12 @@ $this->on('admin.init', function() {
     });
 
     // add custom assets
-    $this('admin')->addAssets([
+    $this->helper('admin')->addAssets([
         'cpmultiplanegui:assets/components/field-simple-gallery.tag',
         'cpmultiplanegui:assets/components/field-seo.tag',
         'cpmultiplanegui:assets/components/field-key-value-pair.tag',
-        'cpmultiplanegui:assets/getImage.js'
+        'cpmultiplanegui:assets/components/getimage-sizes.tag',
+        'cpmultiplanegui:assets/getImage.js',
     ]);
 
     // bind admin routes
@@ -127,7 +128,6 @@ $this->on('admin.init', function() {
     $this->on('collections.entry.aside', function($collection) {
 
         $pages = $this->retrieve('multiplane/pages', 'pages');
-        $posts = $this->retrieve('multiplane/pages', 'posts');
 
         $_collection = $this->module('collections')->collection($collection);
 
@@ -136,6 +136,15 @@ $this->on('admin.init', function() {
             $type = $_collection['multiplane']['type'] ?? 'subpages';
 
             $config = $this->module('cpmultiplanegui')->getConfig();
+
+            $fieldNames = $this->module('cpmultiplanegui')->fieldNames;
+            if (isset($config['fieldNames']) && \is_array($config['fieldNames'])) {
+                foreach ($config['fieldNames'] as $fieldName => $replacement) {
+                    if (\is_string($replacement) && !empty(\trim($replacement))) {
+                        $fieldNames[$fieldName] = \trim($replacement);
+                    }
+                }
+            }
 
             if ($type == 'pages') {
 
@@ -178,11 +187,11 @@ $this->on('admin.init', function() {
                     return mb_strtolower($a['label']) <=> mb_strtolower($b['label']);
                 });
 
-                $this->renderView('cpmultiplanegui:views/partials/pages.entry.aside.php', compact('forms', 'collections'));
+                $this->renderView('cpmultiplanegui:views/partials/pages.entry.aside.php', compact('forms', 'collections', 'config', 'fieldNames'));
             }
 
             else {
-                $this->renderView('cpmultiplanegui:views/partials/posts.entry.aside.php');
+                $this->renderView('cpmultiplanegui:views/partials/posts.entry.aside.php', compact('config', 'fieldNames'));
             }
 
         }
@@ -224,6 +233,11 @@ $this->on('admin.init', function() {
 
     }
 
+    // don't index cockpit in search engines
+    $this->on('app.login.header', function() {
+        echo '<meta name="robots" content="noindex,nofollow">';
+    });
+
 });
 
 // unique check for startpage toggle
@@ -235,11 +249,22 @@ $this->on('admin.init', function() {
 
     $this->on("collections.save.before.{$pages}", function($name, &$entry, $isUpdate) {
 
-        if (isset($entry['startpage']) && $entry['startpage'] == true) {
+        $fieldNames = $this->module('cpmultiplanegui')->fieldNames;
+        if (isset($config['fieldNames']) && \is_array($config['fieldNames'])) {
+            foreach ($config['fieldNames'] as $fieldName => $replacement) {
+                if (\is_string($replacement) && !empty(\trim($replacement))) {
+                    $fieldNames[$fieldName] = \trim($replacement);
+                }
+            }
+        }
+
+        $startpageName = $fieldNames['startpage'];
+
+        if (isset($entry[$startpageName]) && $entry[$startpageName] == true) {
 
             // check, if another page exists, that was the startpage before
 
-            $filter = ['startpage' => true];
+            $filter = [$startpageName => true];
 
             if ($isUpdate && isset($entry['_id'])) {
                 $filter['_id'] = ['$not' => $entry['_id']];
@@ -251,7 +276,7 @@ $this->on('admin.init', function() {
 
                 // set old startpage to false
 
-                $check['startpage'] = false;
+                $check[$startpageName] = false;
 
                 $this->module('collections')->save($name, [$check], ['revision' => true]);
 

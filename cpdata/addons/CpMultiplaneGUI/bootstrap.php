@@ -14,6 +14,28 @@
 
 $this->module('cpmultiplanegui')->extend([
 
+    'fieldNames' => [                             // field mappings to default field names
+        'slug'              => '_id',
+        'nav'               => 'nav',
+        'permalink'         => 'permalink',
+        'published'         => 'published',
+        'startpage'         => 'startpage',
+        'title'             => 'title',
+        'content'           => 'content',
+        'description'       => 'description',
+        'excerpt'           => 'excerpt',
+        'type'              => 'type',            // only if pageTypeDetection == 'type'
+        'subpagemodule'     => 'subpagemodule',
+        'privacypage'       => 'privacypage',
+        'seo'               => 'seo',
+        'featured_image'    => 'featured_image',
+        'background_image'  => 'background_image',
+        'logo'              => 'logo',            // only in site
+        'tags'              => 'tags',
+        'category'          => 'category',        // not used for now, will be like tags
+        'contactform'       => 'contactform',
+    ],
+
     'createProfile' => function($name, $data = []) {
 
         if (!trim($name)) {
@@ -33,9 +55,9 @@ $this->module('cpmultiplanegui')->extend([
             return false;
         }
 
-        $time = time();
+        $time = \time();
 
-        $profile = array_replace_recursive([
+        $profile = \array_replace_recursive([
             'name'      => $name,
             'label'     => $name,
             '_id'       => $name,
@@ -53,7 +75,7 @@ $this->module('cpmultiplanegui')->extend([
 
         return $profile;
 
-    },
+    }, // end of createProfile()
 
     'updateProfile' => function($name, $data) {
 
@@ -79,7 +101,8 @@ $this->module('cpmultiplanegui')->extend([
         // if (function_exists('opcache_reset')) opcache_reset();
 
         return $profile;
-    },
+
+    }, // end of updateProfile()
 
     'saveProfile' => function($name, $data = []) {
 
@@ -88,7 +111,8 @@ $this->module('cpmultiplanegui')->extend([
         }
 
         return isset($data['_id']) ? $this->updateProfile($name, $data) : $this->createProfile($name, $data);
-    },
+
+    }, // end of saveProfile()
 
     'removeProfile' => function($name) {
 
@@ -103,21 +127,24 @@ $this->module('cpmultiplanegui')->extend([
         }
 
         return false;
-    },
+
+    }, // end of removeProfile()
 
     'exists' => function($name) {
+
         return $this->app->path("#storage:multiplane/{$name}.profile.php");
-    },
+
+    }, // end of exists()
 
     'profile' => function($name) {
 
         static $profiles; // cache
 
-        if (is_null($profiles)) {
+        if (\is_null($profiles)) {
             $profiles = [];
         }
 
-        if (!is_string($name)) {
+        if (!\is_string($name)) {
             return false;
         }
 
@@ -131,7 +158,8 @@ $this->module('cpmultiplanegui')->extend([
         }
 
         return $profiles[$name];
-    },
+
+    }, // end of profile()
 
     'profiles' => function($extended = false) {
 
@@ -149,7 +177,8 @@ $this->module('cpmultiplanegui')->extend([
         }
 
         return $stores;
-    },
+
+    }, // end of profiles()
 
     'getConfig' => function() {
 
@@ -160,16 +189,18 @@ $this->module('cpmultiplanegui')->extend([
             $config = $this->app->retrieve('multiplane', []);
 
             if (isset($config['profile']) && $profile = $this->profile($config['profile'])) {
-                $config = array_replace_recursive($config, $profile);
+                $config = \array_replace_recursive($config, $profile);
             }
 
         }
 
         return $config;
 
-    },
+    }, // end of getConfig()
 
     'findMultiplaneDir' => function() {
+
+        if (\defined('MP_DIR')) return MP_DIR;
 
         // to do...
         $checkFile = '/modules/Multiplane/bootstrap.php';
@@ -178,7 +209,7 @@ $this->module('cpmultiplanegui')->extend([
 
             // mp lib skeleton -  I expect Cockpit and CpMultiplane in parallel inside lib folder
 
-            $checkDir = dirname(COCKPIT_DIR) . '/CpMultiplane';
+            $checkDir = \dirname(COCKPIT_DIR) . '/CpMultiplane';
 
             if (\file_exists($checkDir . $checkFile)) {
                 return $checkDir;
@@ -195,7 +226,7 @@ $this->module('cpmultiplanegui')->extend([
 
         return false;
 
-    },
+    }, // end of findMultiplaneDir()
 
     'getSiteUrl' => function($absolute = false) {
 
@@ -213,45 +244,13 @@ $this->module('cpmultiplanegui')->extend([
 
         return $absolute ? $this->app['site_url'] . $url : $url;
 
-    },
-
-    'createDefaults' => function() {
-        // to do...
-    },
+    }, // end of getSiteUrl()
 
 ]);
 
-// pass config to UniqueSlugs addon if not already present, requires UniqueSlugs version 0.5.3
-$this->on('cockpit.bootstrap', function() {
-
-    if (!isset($this['modules']['uniqueslugs'])) return;
-
-    $config = $this->module('cpmultiplanegui')->getConfig();
-
-    if (empty($config['use']['collections'])) return;
-
-    $isMultilingual = $config['isMultilingual'] ?? false;
-
-    $uConfig = $this->retrieve('unique_slugs');
-
-    foreach($config['use']['collections'] as $col) {
-
-        $fieldName = 'title';
-
-        if (!isset($uConfig['collections'][$col])) {
-            $uConfig['collections'][$col] = $fieldName;
-        } else {
-            $fieldName = $uConfig['collections'][$col];
-        }
-
-        if ($isMultilingual && !isset($uConfig['localize'][$col])) {
-            $uConfig['localize'][$col] = $fieldName;
-        }
-    }
-
-    $this->set('unique_slugs', $uConfig);
-
-}, 200); // change config with priority higher than 100
+// load autoconfig
+include_once(__DIR__.'/autoconfig/uniqueslugs.php');
+include_once(__DIR__.'/autoconfig/imageresize.php');
 
 // ACL
 $app('acl')->addResource('cpmultiplanegui', ['create', 'delete', 'manage']);

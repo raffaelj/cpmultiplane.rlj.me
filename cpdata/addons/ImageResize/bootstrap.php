@@ -5,7 +5,7 @@
  * @see       https://github.com/raffaelj/cockpit_ImageResize
  * @see       https://github.com/agentejo/cockpit/
  * 
- * @version   0.2.0
+ * @version   0.2.1
  * @author    Raffael Jesche
  * @license   MIT
  */
@@ -16,11 +16,50 @@ $this->module('imageresize')->extend([
 
     'config' => null,
 
+    'spatieOptimizers' => [
+        'Jpegoptim',
+        'Pngquant',
+        'Optipng',
+        'Svgo',
+        'Gifsicle',
+        'Cwebp',
+    ],
+
+    'spatieOptions' => [
+        'Jpegoptim' => [
+            '-m85',
+            '--strip-all',
+            '--all-progressive',
+        ],
+        'Pngquant' => [
+            '--force',
+            '--skip-if-larger',
+        ],
+        'Optipng' => [
+            '-i0',
+            '-o2',
+            '-quiet',
+        ],
+        'Svgo' => [
+            '--disable={cleanupIDs,removeViewBox}',
+        ],
+        'Gifsicle' => [
+            '-b',
+            '-O3',
+        ],
+        'Cwebp' => [
+            '-m 6',
+            '-pass 10',
+            '-mt',
+            '-q 80',
+        ],
+    ],
+
     'getConfig' => function($key = null) {
 
         if (!$this->config) {
 
-            $this->config = array_replace_recursive(
+            $this->config = \array_replace_recursive(
                 [
                     'resize'       => true,
                     'keepOriginal' => true,       # boolean, default: true
@@ -33,8 +72,8 @@ $this->module('imageresize')->extend([
                     'prettyNames'  => false,      # remove uniqid from file names
                     'customFolder' => null,       # overwrite original date pattern
                     'optimize'     => false,      # Use Spatie optimizer
-                    'replaceAssetsManager' => false, # modified assets manager
-                    // 'renameToTitle' => false,  # rename image to title (for SEO), to do... (must be unique)
+                    'replaceAssetsManager' => false,   # modified assets manager
+                    'syncFileNamesWithTitle' => false, # set file name to sluggified title (experimental)
                 ],
                 $this->app->storage->getKey('cockpit/options', 'imageresize', []),
                 $this->app->retrieve('imageresize', [])
@@ -56,7 +95,7 @@ $this->module('imageresize')->extend([
         $name = $path_parts['filename'];
         $ext  = $path_parts['extension'];
 
-        $dir = '/'.date('Y/m/d').'/';
+        $dir = '/'.\date('Y/m/d').'/';
 
         if (\is_string($this->config['customFolder'])) {
             $dir = '/'.\trim($this->config['customFolder'], '/').'/';
@@ -81,6 +120,9 @@ $this->module('imageresize')->extend([
     },
 
     'replaceAsset' => function($asset, $opts = null, $file = null) {
+
+        $isImage = isset($asset['image']) && $asset['image'];
+        $isSVG   = \preg_match('/svg/', $asset['mime']);
 
         if (!$opts) $opts  = ['mimetype' => $asset['mime']];
 
@@ -111,38 +153,34 @@ $this->module('imageresize')->extend([
             return;
         }
 
-        // use orginal size if 0
-        $maxWidth  = $c['maxWidth']  ? $c['maxWidth']  : $asset['width'];
-        $maxHeight = $c['maxHeight'] ? $c['maxHeight'] : $asset['height'];
+        // create extra images from profiles
+        if ($isImage && !$isSVG) {
+            foreach ($c['profiles'] as $name => $options) {
 
-        if (!($asset['width'] > $maxWidth || $asset['height'] > $maxHeight)) {
-//             return;
-        }
+                if ($resized = $this->createResizedAssetFromProfile($asset, $file, $opts, $name, $options)) {
 
-        // copy original file to full dir
-        if ($c['keepOriginal']) {
-
-            $destination = '/'.\trim($c['moveOriginalTo'], '/').'/'.\basename($asset['path']);
-
-            // move file
-            $stream = \fopen($file, 'r+');
-            $this->app->filestorage->writeStream("assets://{$destination}", $stream, $opts);
-
-            if (\is_resource($stream)) {
-                \fclose($stream);
+                    $asset['sizes'][$name] = $resized;
+                }
             }
+        }
+        // copy original file to full dir
+        $dontNeedBackup = $isSVG && (!$c['optimize']
+            || ($c['optimize'] && !\in_array('Svgo', $this->spatieOptimizers)));
 
-            $asset['sizes']['full'] = [
-                'path'   => $destination,
-                'width'  => $asset['width'],
-                'height' => $asset['height'],
-                'size'   => $asset['size'],
-            ];
+        if ($c['keepOriginal'] && $isImage && !$dontNeedBackup) {
 
+            $ret = $this->createBackup($asset, $file, $opts);
+
+            if ($ret) $asset = $ret;
         }
 
         // resize only images, not svg
-        if ($asset['image'] && (isset($asset['width']) && isset($asset['height']))) {
+        if ($isImage && !$isSVG) {
+
+            // use orginal size if 0
+            $maxWidth  = $c['maxWidth']  ? $c['maxWidth']  : ($asset['width'] ?? 0);
+            $maxHeight = $c['maxHeight'] ? $c['maxHeight'] : ($asset['height'] ?? 0);
+
             // resize image
             $img = $this->app->helper('image')
                     ->take($file)
@@ -159,9 +197,9 @@ $this->module('imageresize')->extend([
                 $asset['size']    = \filesize($file);
                 $asset['resized'] = true;
             }
-        }
 
-        unset($img);
+            unset($img);
+        }
 
         if ($c['optimize']) {
             $this->optimize($file);
@@ -169,16 +207,32 @@ $this->module('imageresize')->extend([
             $asset['optimized'] = true;
         }
 
-        // create extra images from profiles
-        foreach ($c['profiles'] as $name => $options) {
+        return $asset;
 
-            if ($resized = $this->createResizedAssetFromProfile($asset, $file, $opts, $name, $options)) {
+    },
 
-                $asset['sizes'][$name] = $resized;
+    'createBackup' => function($asset, $file, $opts) {
 
-            }
+        if (!$opts) $opts = ['mimetype' => $asset['mime']];
 
+        $c = $this->getConfig();
+
+        $destination = '/'.\trim($c['moveOriginalTo'], '/').'/'.\basename($asset['path']);
+
+        // move file
+        $stream = \fopen($file, 'r+');
+        $this->app->filestorage->writeStream("assets://{$destination}", $stream, $opts);
+
+        if (\is_resource($stream)) {
+            \fclose($stream);
         }
+
+        $asset['sizes']['full'] = [
+            'path'   => $destination,
+            'size'   => $asset['size'],
+        ];
+        if (isset($asset['width']))  $asset['sizes']['full']['width']  = $asset['width'];
+        if (isset($asset['height'])) $asset['sizes']['full']['height'] = $asset['height'];
 
         return $asset;
 
@@ -215,7 +269,7 @@ $this->module('imageresize')->extend([
             $options = $this->config['profiles'][$name];
         }
 
-        $c = array_replace([
+        $c = \array_replace([
             'width'   => 1920,
             'height'  => 0,
             'method'  => 'thumbnail',
@@ -233,7 +287,7 @@ $this->module('imageresize')->extend([
 
         $dir = !empty($c['folder']) ? $c['folder'] : $name;
         $dir = '/'.\trim($dir, '/').'/';
-        $file_name = basename($asset['path']);
+        $file_name = \basename($asset['path']);
 
         $destination = "{$dir}{$file_name}";
 
@@ -258,12 +312,12 @@ $this->module('imageresize')->extend([
                 ->toString(null, $c['quality']);
 
         // write img to tmp file
-        $tmp = $this->app->path('#tmp:').uniqid()."_{$name}_{$file_name}";
+        $tmp = $this->app->path('#tmp:').\uniqid()."_{$name}_{$file_name}";
         $this->app->helper('fs')->write($tmp, $img);
 
         unset($img);
 
-        if ($c['optimize']) {
+        if ($c['optimize'] ?? false) {
             $this->optimize($tmp);
         }
 
@@ -284,7 +338,7 @@ $this->module('imageresize')->extend([
             'size'   => \filesize($tmp),
         ];
 
-        if ($c['optimize']) {
+        if ($c['optimize'] ?? false) {
             $return['optimized'] = true;
         }
 
@@ -296,7 +350,106 @@ $this->module('imageresize')->extend([
 
     'optimize' => function($file) {
 
-        \Spatie\ImageOptimizer\OptimizerChainFactory::create()->optimize($file);
+//         \Spatie\ImageOptimizer\OptimizerChainFactory::create()->optimize($file);
+
+        $optimizerChain = (new Spatie\ImageOptimizer\OptimizerChain);
+
+        foreach ($this->spatieOptimizers as $optimizer) {
+
+            $name = "Spatie\\ImageOptimizer\\Optimizers\\{$optimizer}";
+            $opts = $this->spatieOptions[$optimizer] ?? [];
+
+            $optimizerChain->addOptimizer(new $name($opts));
+
+        }
+
+        $optimizerChain->optimize($file);
+
+    },
+
+    'updateFileName' => function($asset, $fileName = null, $force = false) {
+
+        $isUpdate = isset($asset['_id']);
+
+        if (!$isUpdate) return false;
+
+        $_asset = $this->app->storage->findOne('cockpit/assets', ['_id' => $asset['_id']]);
+
+        $origPath   = $_asset['path'];
+        $path_parts = \pathinfo($origPath);
+        $dir        = \rtrim(($path_parts['dirname'] ?? ''), '/');
+        $name       = $path_parts['filename'];
+        $ext        = $path_parts['extension'];
+        $basename   = $path_parts['basename'] ?? '';
+
+        // use title by default
+        if (!$fileName) {
+
+            if (!isset($asset['title']) || !\is_string($asset['title'])) return false;
+
+            // not changed
+            if (!$force && isset($_asset['title']) && $_asset['title'] === $asset['title']) return false;
+
+            $fileName = \trim($asset['title']);
+
+            if (empty($fileName)) return false;
+
+            // don't rename if title matches file name to avoid img.jpg.jpg
+            if ($title == \trim($basename, '/')) return false;
+
+        }
+
+        $newFileName = $this->app->helper('utils')->sluggify($fileName);
+
+        $newPath = "{$dir}/{$newFileName}.{$ext}";
+
+        if ($newPath == $origPath) return false;
+
+        if ($this->app->filestorage->has('assets://'.$asset['path'])) {
+
+            $num = 0;
+            while ($this->app->filestorage->has("assets://{$newPath}")) {
+                $num++;
+                $newPath = "{$dir}/{$newFileName}-{$num}.{$ext}";
+
+                if ($newPath == $origPath) return false;
+            }
+
+            $this->app->filestorage->rename('assets://'.$asset['path'], $newPath);
+
+        }
+
+        $asset['path'] = $newPath;
+
+
+        if (isset($asset['sizes']) && \is_array($asset['sizes'])) {
+
+            foreach ($asset['sizes'] as &$profile) {
+
+                $path_parts = \pathinfo($profile['path']);
+                $dir = $path_parts['dirname'] ?? '';
+                $dir = \rtrim($dir, '/');
+
+                $newPath = "{$dir}/{$newFileName}.{$ext}";
+
+                if ($this->app->filestorage->has('assets://'.$profile['path'])) {
+
+                    $num = 0;
+                    while ($this->app->filestorage->has("assets://{$newPath}")) {
+                        $num++;
+                        $newPath = "{$dir}/{$newFileName}-{$num}.{$ext}";
+                    }
+
+                    $this->app->filestorage->rename('assets://'.$profile['path'], $newPath);
+
+                    $profile['path'] = $newPath;
+
+                }
+
+            }
+        }
+
+        return ['asset' => $asset];
 
     },
 
@@ -305,6 +458,9 @@ $this->module('imageresize')->extend([
 $this->on('cockpit.asset.upload', function(&$asset, &$_meta, &$opts, &$file, &$path) {
 
     $c = $this->module('imageresize')->getConfig();
+
+    $isImage = isset($asset['image']) && $asset['image'];
+    $isSVG   = \preg_match('/svg/', $asset['mime']);
 
     // change only custom directory
     if (!$c['prettyNames'] && \is_string($c['customFolder'])) {
@@ -320,15 +476,10 @@ $this->on('cockpit.asset.upload', function(&$asset, &$_meta, &$opts, &$file, &$p
         $path  = $asset['path'];
     }
 
-    // replace uploaded file with resized file
-    if (!$c['resize'] && $c['optimize']) {
-        $this->module('imageresize')->optimize($file);
-        $asset['size'] = \filesize($file);
-        $asset['optimized'] = true;
-    }
+    if (!$isImage) return;
 
     // create extra images from profiles
-    if (!$c['resize'] && \is_array($c['profiles'])) {
+    if (!$c['resize'] && \is_array($c['profiles']) && !$isSVG) {
         foreach ($c['profiles'] as $name => $options) {
             if ($resized = $this->module('imageresize')->createResizedAssetFromProfile($asset, $file, $opts, $name, $options)) {
                 $asset['sizes'][$name] = $resized;
@@ -336,9 +487,17 @@ $this->on('cockpit.asset.upload', function(&$asset, &$_meta, &$opts, &$file, &$p
         }
     }
 
+    // replace uploaded file with resized file
+    if (!$c['resize'] && $c['optimize']) {
+        $this->module('imageresize')->optimize($file);
+        $asset['size'] = \filesize($file);
+        $asset['optimized'] = true;
+    }
+
     // run all steps
     if ($c['resize']) {
-        $asset = $this->module('imageresize')->replaceAsset($asset, $opts, $file);
+        $ret = $this->module('imageresize')->replaceAsset($asset, $opts, $file);
+        if ($ret && \is_array($ret)) $asset = $ret;
     }
 
 });
@@ -358,6 +517,30 @@ $this->on('cockpit.assets.remove', function($assets) {
                 }
             }
         }
+    }
+
+});
+
+// sync file names with image titles (useful for SEO) - experimental
+$this->on('cockpit.asset.save', function(&$asset) {
+
+    $isUpdate = isset($asset['_id']);
+
+    if (!$isUpdate) return;
+
+    $c = $this->module('imageresize')->getConfig();
+
+    if (!$c['syncFileNamesWithTitle']) return;
+
+    $ret = $this->module('imageresize')->updateFileName($asset);
+
+    if ($ret && \is_array($ret) && isset($ret['asset'])) {
+
+        $asset = $ret['asset'];
+
+        // after changing the file paths, all assets, galleries etc. in collection entries
+        // and singletons should be updated...
+        $this->trigger('imageresize.asset.path.update', [$asset]);
     }
 
 });

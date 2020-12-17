@@ -2,6 +2,21 @@
 
     <style>
         .uk-breadcrumb { margin-bottom: 0; }
+        .uk-progress-bar {
+            white-space: nowrap;
+        }
+        .uk-table-tabbed th.selectall {
+            font-size: 16px;
+        }
+        .selectall .uk-checkbox {
+            vertical-align: bottom;
+        }
+        .selectall .uk-checkbox:before {
+            box-sizing: border-box;
+        }
+        .uk-checkbox:checked:after {
+            transform: translate(5%, 5%);
+        }
     </style>
 
     <div ref="list" show="{ mode=='list' }">
@@ -144,7 +159,11 @@
                                     <div class="uk-position-absolute uk-position-cover uk-flex uk-flex-middle">
                                         <div class="uk-width-1-1 uk-text-center">
                                             <span if="{ asset.mime.match(/^image\//) == null }"><i class="uk-h1 uk-text-muted uk-icon-{ parent.getIconCls(asset.path) }"></i></span>
-                                            <cp-thumbnail src="{asset._id}" height="150" if="{ asset.mime.match(/^image\//) }" title="{ asset.width && [asset.width, asset.height].join('x') }"></cp-thumbnail>
+                                            <!--<cp-thumbnail src="{asset._id}" height="150" if="{ asset.mime.match(/^image\//) }" title="{ asset.width && [asset.width, asset.height].join('x') }"></cp-thumbnail>-->
+
+                                            <!-- custom -->
+                                            <cp-thumbnail src="{ASSETS_URL+asset.path}" height="150" if="{ asset.mime.match(/^image\//) }" title="{ asset.width && [asset.width, asset.height].join('x') }"></cp-thumbnail>
+                                            <!-- custom -->
                                         </div>
                                     </div>
                                 </div>
@@ -168,11 +187,14 @@
                         <thead>
                             <tr>
                                 <!-- custom -->
-                                <th width="30" class="uk-text-center"><input class="uk-checkbox" type="checkbox" data-check="all" onclick="{ selectAll }"></th>
+                                <th width="30" class="uk-text-center selectall"><input class="uk-checkbox" type="checkbox" ref="selectall" onclick="{ selectAll }" title="{ App.i18n.get('Select all') }" data-uk-tooltip /></th>
                                 <!-- custom -->
                                 <th class="uk-text-small uk-noselect">{ App.i18n.get('Title') }</th>
                                 <th class="uk-text-small uk-noselect" width="20%">{ App.i18n.get('Type') }</th>
                                 <th class="uk-text-small uk-noselect" width="10%">{ App.i18n.get('Size') }</th>
+                                <!-- custom -->
+                                <th class="uk-text-small uk-noselect" width="10%">{ App.i18n.get('Sizes') }</th>
+                                <!-- custom -->
                                 <th class="uk-text-small uk-noselect" width="10%">{ App.i18n.get('Updated') }</th>
                                 <th class="uk-text-small uk-noselect" width="30"></th>
                             </tr>
@@ -193,6 +215,9 @@
                                 </td>
                                 <td class="uk-text-small">{ asset.mime }</td>
                                 <td class="uk-text-small">{ App.Utils.formatSize(asset.size) }</td>
+                                <!-- custom -->
+                                <td class="uk-text-small"><raw if="{ asset.sizes && App.Utils.isObject(asset.sizes) }" content="{ App.Utils.renderer.tags(Object.keys(asset.sizes)) }"></raw></td>
+                                <!-- custom -->
                                 <td class="uk-text-small">{ App.Utils.dateformat( new Date( 1000 * asset.modified )) }</td>
                                 <td>
                                     <span class="uk-float-right" data-uk-dropdown="mode:'click'">
@@ -216,11 +241,12 @@
 
             </div>
 
-            <div class="uk-margin uk-flex uk-flex-middle uk-noselect" if="{!loading && pages > 1 }">
+            <!--<div class="uk-margin uk-flex uk-flex-middle uk-noselect" if="{!loading && pages > 1 }">-->
+            <div class="uk-margin uk-flex uk-flex-middle uk-noselect" if="{!loading && (pages > 1 || limit != (opts.limit || 15)) }">
 
                 <ul class="uk-breadcrumb uk-margin-remove">
-                    <li class="uk-active"><span>{ page }</span></li>
-                    <li data-uk-dropdown="mode:'click'">
+                    <li class="uk-active" if="{ pages > 1 }"><span>{ page }</span></li>
+                    <li data-uk-dropdown="mode:'click'" if="{ pages > 1 }">
 
                         <a><i class="uk-icon-bars"></i> { pages }</a>
 
@@ -236,6 +262,24 @@
                         </div>
 
                     </li>
+                    <!-- custom-->
+                    <li data-uk-dropdown="mode:'click'">
+
+                        <a><i class="uk-icon-plus-square-o"></i> { limit }</a>
+
+                        <div class="uk-dropdown">
+
+                            <strong class="uk-text-small"> { App.i18n.get('Assets per page') }</strong>
+
+                            <div class="uk-margin-small-top">
+                                <ul class="uk-nav uk-nav-dropdown">
+                                    <li class="uk-text-small" each="{v in limitOptions}"><a class="uk-dropdown-close" onclick="{ parent.updateLimit }" data-limit="{ v }">{v}</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </li>
+                    <!-- custom-->
                 </ul>
 
                 <div class="uk-button-group uk-margin-small-left">
@@ -298,6 +342,10 @@
         this.pages    = 1;
         this.limit    = opts.limit || 15;
 
+        // custom
+        this.limitOptions = [10,15,20,50,100,500,1000];
+        // custom
+
         this.on('mount', function() {
 
             if (opts.typefilter) {
@@ -312,6 +360,11 @@
                 '/assets/lib/uppie.js'
             ], function() {
 
+                // custom
+                var filesCount = 0,
+                    completed  = 0;
+                // custom
+
                 var uploadSettings = {
 
                     action: App.route('/assetsmanager/upload'),
@@ -322,16 +375,94 @@
                     loadstart: function() {
                         $this.refs.uploadprogress.classList.remove('uk-hidden');
                     },
-                    progress: function(percent) {
+//                     progress: function(percent) {
+// 
+//                         percent = Math.ceil(percent) + '%';
+// 
+//                         $this.refs.progressbar.innerHTML   = '<span>'+percent+'</span>';
+//                         $this.refs.progressbar.style.width = percent;
+//                     },
+                    // custom
+                    beforeAll: function(files) {
 
-                        percent = Math.ceil(percent) + '%';
-
+                        // remove previous progress bars
+                        App.$($this.refs.uploadprogress.find('.uk-progress:not(:first-child)')).remove();
+                        var percent = '0%';
                         $this.refs.progressbar.innerHTML   = '<span>'+percent+'</span>';
                         $this.refs.progressbar.style.width = percent;
+
+                        filesCount = files.length;
+
+                        Array.prototype.forEach.call(files, function(file) {
+                            var el       = document.createElement('div'),
+                                subEl    = document.createElement('div'),
+                                fileName = App.Utils.sluggify(file.name);
+                            el.classList.add('uk-progress');
+                            subEl.classList.add('uk-progress-bar');
+                            subEl.style.width = '0%';
+                            subEl.setAttribute('data-progressbar', fileName);
+                            subEl.textContent = fileName;
+                            el.appendChild(subEl);
+                            $this.refs.uploadprogress.appendChild(el);
+                        });
+                    },
+                    complete: function(response, xhr) {
+
+                        completed++;
+
+                        var percent  = Math.ceil(100 / filesCount * completed) +'%'
+
+                        if (response.uploaded && response.uploaded.length) {
+
+                            var fileName = App.Utils.sluggify(response.uploaded[0]);
+
+                            var progressbar = document.querySelector('[data-progressbar="'+fileName+'"]');
+
+                            if (progressbar) {
+
+                                $this.refs.progressbar.innerHTML   = '<span>'+percent+'</span>';
+                                $this.refs.progressbar.style.width = percent;
+
+                                progressbar.innerHTML   = '<span>'+fileName+' 100%</span>';
+                                progressbar.style.width = '100%';
+                            }
+
+                        }
+
+                        if (response.failed && response.failed.length) {
+
+                            var fileName = App.Utils.sluggify(response.failed[0]);
+
+                            var progressbar = document.querySelector('[data-progressbar="'+fileName+'"]');
+
+                            if (progressbar) {
+
+                                $this.refs.progressbar.innerHTML   = '<span>'+percent+'</span>';
+                                $this.refs.progressbar.style.width = percent;
+
+                                progressbar.parentElement.classList.add('uk-progress-danger');
+                                progressbar.innerHTML   = '<span>'+fileName+' 0%</span>';
+                                progressbar.style.width = '100%';
+
+                            }
+
+                        }
+
+                        if (progressbar) {
+                            setTimeout(function() {
+                                progressbar.parentElement.classList.add('uk-hidden');
+                            }, 5000);
+                        }
+
                     },
                     allcomplete: function(response) {
 
-                        $this.refs.uploadprogress.classList.add('uk-hidden');
+                        setTimeout(function() {
+                            $this.refs.uploadprogress.classList.add('uk-hidden');
+                        }, 5000);
+
+                        filesCount = 0,
+                        completed  = 0;
 
                         if (response && response.failed && response.failed.length) {
                             App.ui.notify("File(s) failed to upload.", "danger");
@@ -339,24 +470,17 @@
 
                         if (response && Array.isArray(response.assets) && response.assets.length) {
 
-                            if (!Array.isArray($this.assets)) {
-                                $this.assets = [];
-                            }
-
                             App.ui.notify("File(s) uploaded.", "success");
-
-                            response.assets.forEach(function(asset){
-                                $this.assets.unshift(asset);
-                            });
-
-                            $this.listAssets(1);
                         }
 
                         if (!response) {
                             App.ui.notify("Something went wrong.", "danger");
                         }
 
+                        $this.listAssets(1);
+
                     }
+                    // custom
                 },
 
                 uploadselect = UIkit.uploadSelect(App.$('.js-upload-select', $this.root)[0], uploadSettings),
@@ -492,6 +616,15 @@
             this.listAssets(page || 1);
         }
 
+        // custom
+        updateLimit(e) {
+
+            this.limit = parseInt(e.target.getAttribute('data-limit'), 10);
+
+            this.listAssets(1);
+        }
+        // custom
+
         remove(e) {
             var asset = e.item.asset,
                 idx   = e.item.idx;
@@ -572,13 +705,26 @@
                 this.selected.splice(idx, 1);
             }
 
+            // custom
+            if (this.listmode == 'list') {
+                if (this.selected.length == this.assets.length) {
+                    this.refs.selectall.checked = true;
+                    this.refs.selectall.setAttribute('checked', true);
+                }
+                else {
+                    this.refs.selectall.checked = false;
+                    this.refs.selectall.removeAttribute('checked');
+                }
+            }
+            // custom
+
             App.$(this.root).trigger('selectionchange', [this.selected]);
         }
 
         // custom
         selectAll(e) {
 
-            this.selected = this.selected != this.assets ? this.assets : [];
+            this.selected = this.selected.length != this.assets.length ? [].concat(this.assets) : [];
 
             App.$(this.root).trigger('selectionchange', [this.selected]);
         }
@@ -746,23 +892,11 @@
                   <div class="uk-margin-large-top uk-text-center" if="{asset}">
                       <span class="uk-h1" if="{asset.mime.match(/^image\//) == null }"><i class="uk-icon-{ getIconCls(asset.path) }"></i></span>
                       <div class="uk-display-inline-block uk-position-relative asset-fp-image" if="{asset.mime.match(/^image\//) }">
-                          <!--<cp-thumbnail src="{ASSETS_URL+asset.path}" width="800"></cp-thumbnail
-                          <div class="cp-assets-fp" title="Focal Point" data-uk-tooltip></div>>-->
-
-                          <!-- custom -->
-                          <cp-thumbnail src="{ASSETS_URL+asset.path}" width="800" if="{ !currentSize || currentSize == 'default' || !asset.sizes[currentSize] }"></cp-thumbnail>
-
-                          <cp-thumbnail if="{ currentSize && currentSize != 'default' && asset.sizes[currentSize] }" src="{ ASSETS_URL+asset.sizes[currentSize].path }" width="{ asset.sizes[currentSize].width }" height="{ asset.sizes[currentSize].height }"></cp-thumbnail>
-                          <div class="cp-assets-fp" title="Focal Point" data-uk-tooltip show="{ !currentSize || currentSize == 'default' || !asset.sizes[currentSize] }"></div>
-                          <!-- custom -->
-
+                          <cp-thumbnail src="{ASSETS_URL+asset.path}" width="800"></cp-thumbnail>
+                          <div class="cp-assets-fp" title="Focal Point" data-uk-tooltip></div>
                       </div>
                       <div class="uk-margin-top uk-text-truncate uk-text-small uk-text-muted">
                           <a href="{ASSETS_URL+asset.path}" target="_blank"  title="{ App.i18n.get('Direct link to asset') }" data-uk-tooltip><i class="uk-icon-button uk-icon-button-outline uk-text-primary uk-icon-link"></i></a>
-
-                          <!-- custom -->
-                          <a if="{ imageResize && asset.sizes }" each="{ options, name in asset.sizes }" href="{ASSETS_URL+options.path}" target="_blank" title="{ App.i18n.get('Direct link to asset')+' ('+name+')' }" data-uk-tooltip><i class="uk-icon-button uk-text-primary uk-icon-link uk-margin-small-left"></i></a>
-                          <!-- custom -->
                       </div>
                   </div>
               </div>
@@ -773,35 +907,6 @@
               <div class="uk-margin uk-panel-box uk-panel-card">
                   <label class="uk-text-small uk-text-bold">{ App.i18n.get('Copyright') }</label>
                   <input class="uk-width-1-1" type="text" bind="asset.copyright">
-              </div>
-
-              <div class="uk-margin uk-panel-box uk-panel-card" if="{ imageResize }">
-
-                  <label class="uk-text-small uk-text-bold">ImageResize</label>
-
-                  <div class="">
-
-                      <label class="uk-text-small uk-text-bold">{ App.i18n.get('Select size') }</label>
-                      <select bind="currentSize" class="uk-margin-left">
-                          <option value="default">{ App.i18n.get('default') }</option>
-                          <option value="{name}" each="{ options, name in asset.sizes }">{ name }</option>
-                      </select>
-
-                  </div>
-
-                  <div class="">
-
-                      <label class="uk-text-small uk-text-bold">{ App.i18n.get('Regenerate size') }</label>
-                      <i class="uk-icon-info-circle uk-margin-small-left" title="{ App.i18n.get('Set the focal point and click \'Generate\'') }" data-uk-tooltip></i>
-                      <ul class="uk-list">
-                          <li each="{ options, size in profiles }">
-                          { size }
-                          <a class="uk-button-small" data-size="{size}" onclick="{ generateSize }">{ App.i18n.get('Generate') }</a>
-                          </li>
-                      </ul>
-
-                  </div>
-
               </div>
               <!-- custom -->
 
@@ -860,13 +965,6 @@
     this.panel  = null;
     this.panels = [];
 
-    // custom
-    // ImageResize addon
-    this.imageResize = false;
-    this.currentSize = 'default';
-    this.profiles = this.parent ? this.parent.profiles : {};
-    // custom
-
     for (var tag in riot.tags) {
 
         if (tag.indexOf('assetspanel-')==0) {
@@ -883,15 +981,10 @@
           
           $this.asset = asset;
 
-          // custom
-          // hide in entry modal or if not image
-          $this.imageResize = $this.parent && $this.asset.mime.match(/^image\//) ? true : false;
-          // custom
-
           $this.update();
           
           if ($this.asset.mime.match(/^image\//)) {
-              
+
               setTimeout(function() {
                   
                   $this.placeFocalPoint($this.asset.fp);
@@ -956,30 +1049,8 @@
         });
     }
 
-    // custom
-    generateSize(e) {
-
-        if (e) e.preventDefault();
-
-        var size = e.target.dataset.size;
-
-        var data = {
-            asset: this.asset,
-            name: size
-        };
-
-        App.request('/imageresize/addResizedAsset', data).then(function(data) {
-
-            if (typeof $this.asset.sizes == 'undefined') {
-                $this.asset.sizes = {};
-            }
-
-            $this.asset.sizes[size] = data;
-            $this.updateAsset();
-
-        });
-
-    }
+    // custom - fix js error for non-existent function if called without parent cp-assets component
+    this.getIconCls = this.parent && this.parent.getIconCls ? this.parent.getIconCls : function() {return 'file-text-o';};
     // custom
 
   </script>
