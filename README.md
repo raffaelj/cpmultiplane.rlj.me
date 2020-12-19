@@ -35,7 +35,8 @@ stop: `docker-compose down`
 ```bash
 ssh user@host
 cd ~/html
-git clone https://github.com/raffaelj/cpmultiplane.rlj.me.git .
+#git clone https://github.com/raffaelj/cpmultiplane.rlj.me.git .
+git clone https://codeberg.org/raffaelj/cpmultiplane.rlj.me.git .
 ```
 
 ### update
