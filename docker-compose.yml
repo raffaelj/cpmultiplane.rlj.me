@@ -8,7 +8,9 @@ services:
     # https://hub.docker.com/r/raffaelj/php7-apache-base
     # https://github.com/raffaelj/dockerfiles/tree/master/php7-apache-base
     #image: raffaelj/php7-apache-base
-    image: raffaelj/php7-apache-imgopt
+    # image: raffaelj/php7-apache-imgopt
+    # image: raffaelj/php7.4-apache-dev
+    image: raffaelj/php8.0-apache-dev
 
     container_name: cpmpdocs
 
@@ -22,13 +24,14 @@ services:
       - ./:/var/www/html
 
       # mount git repos for local development
-      #- ${COCKPIT_REPO}:/var/www/html/lib/cockpit
-      #- ${CPMULTIPLANE_REPO}:/var/www/html/lib/CpMultiplane
+      # - ${COCKPIT_REPO}:/var/www/html/lib/cockpit
+      # - ${CPMULTIPLANE_REPO}:/var/www/html/lib/CpMultiplane
 
       #- ${COCKPIT_ADDONS_REPOS}/cockpit_phpLiteAdmin:/var/www/html/cpdata/addons/phpLiteAdmin
-      #- ${COCKPIT_ADDONS_REPOS}/cockpit_BetterMarkdown:/var/www/html/cpdata/addons/BetterMarkdown
-      #- ${COCKPIT_ADDONS_REPOS}/cockpit_CpMultiplaneGUI:/var/www/html/cpdata/addons/CpMultiplaneGUI
-      #- ${COCKPIT_ADDONS_REPOS}/cockpit_ImageResize:/var/www/html/cpdata/addons/ImageResize
+      # - ${COCKPIT_ADDONS_REPOS}/cockpit_BetterMarkdown:/var/www/html/cpdata/addons/BetterMarkdown
+      # - ${COCKPIT_ADDONS_REPOS}/cockpit_CpMultiplaneGUI:/var/www/html/cpdata/addons/CpMultiplaneGUI
+      # - ${COCKPIT_ADDONS_REPOS}/cockpit_ImageResize:/var/www/html/cpdata/addons/ImageResize
+      # - ~/dev/git/parsedownToc/:/var/www/html/cpdata/addons/BetterMarkdown/lib/vendor/hoegh/parsedown-toc
 
     ports:
       - ${PORT:-127.0.0.1:8080}:80
