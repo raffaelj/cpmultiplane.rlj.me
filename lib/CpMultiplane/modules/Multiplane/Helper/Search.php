@@ -24,9 +24,12 @@ class Search extends \Lime\Helper {
 
         $this->isMultilingual = $this->app->module('multiplane')->isMultilingual;
         $this->defaultLang    = $this->app->module('multiplane')->defaultLang;
-        $this->fieldNames     = $this->app->module('multiplane')->fieldNames;
         $this->languages      = $this->app->module('multiplane')->getLanguages();
         $this->lang           = $this->app->module('multiplane')->lang;
+        $this->isDefaultLang  = $this->lang == $this->defaultLang;
+        $this->langSuffix     = $this->app->module('multiplane')->getLanguageSuffix();
+
+        $this->fieldNames     = $this->app->module('multiplane')->fieldNames;
         $this->minLength      = $this->app->module('multiplane')->get('search/minLength');
         $this->collections    = $this->app->module('multiplane')->get('search/collections');
         $this->searches       = [];
@@ -34,10 +37,10 @@ class Search extends \Lime\Helper {
         $this->fieldSearch    = [];
         $this->allowedFields  = ['title', 'content', 'tags', 'category'];
         $this->pages          = $this->app->module('multiplane')->pages;
+        $this->usePermalinks  = $this->app->module('multiplane')->usePermalinks;
+        $this->structure      = $this->app->module('multiplane')->get('structure');
 
         $this->list = new \ArrayObject([]);
-
-        $this->isWhereFilterAvailable = \version_compare($this->app->retrieve('cockpit/version'), '0.11.2', '>=');
 
     } // end of initialize()
 
@@ -65,7 +68,7 @@ class Search extends \Lime\Helper {
 
             if (!$sort || !\is_callable($sort)) {
                 // sort by weight
-                $sort = function($a, $b) {return $a['weight'] < $b['weight'];};
+                $sort = function($a, $b) {return $a['weight'] < $b['weight'] ? 1 : 0;};
             }
 
             $this->list->uasort($sort);
@@ -99,13 +102,18 @@ class Search extends \Lime\Helper {
 
             if (!$_collection) continue;
 
+            if (!empty($this->structure[$collection]['_pid'])) {
+                $parentSlugName = 'slug' . $this->langSuffix;
+                $c['route'] = $this->structure[$collection][$parentSlugName];
+            }
+
             $options = $this->generateFilterOptions($c);
             if (empty($options['filter'])) continue;
             $options['filter'][$this->fieldNames['published']] = true;
 
             foreach ($this->app->module('collections')->find($collection, $options) as $entry) {
 
-                $this->list[] = $this->getWeightedItem($entry, $_collection, $c, $collection);
+                $this->list[] = $this->getWeightedItem($entry, $_collection, $c);
 
             }
 
@@ -190,7 +198,7 @@ class Search extends \Lime\Helper {
 
             $this->collections[$name] = [
                 'name'   => $name,
-                'route'  => $name == $this->pages ? '' : $this->app->module('multiplane')->getSubPageRoute($name),
+                'route'  => $name == $this->pages ? '' : $this->app->module('multiplane')->getCollectionSlug($name),
                 'weight' => $pageType == 'pages' ? 10 : 5,
             ];
 
@@ -219,6 +227,7 @@ class Search extends \Lime\Helper {
     public function generateFilterOptions($c) {
 
         $slugName      = $this->fieldNames['slug'];
+        $permalinkName = $this->fieldNames['permalink'];
         $startpageName = $this->fieldNames['startpage'];
 
         $options = [
@@ -228,6 +237,7 @@ class Search extends \Lime\Helper {
 
         $options['fields'] = [
             $slugName      => true,
+            $permalinkName => true,
             $startpageName => true,
             '_created'     => true,
         ];
@@ -236,21 +246,26 @@ class Search extends \Lime\Helper {
             foreach ($this->languages as $l) {
                 if ($l != $this->defaultLang) {
                     $options['fields']["{$slugName}_{$l}"] = true;
+                    $options['fields']["{$permalinkName}_{$l}"] = true;
                 }
             }
         }
-
-        $suffix = $this->lang == $this->defaultLang ? '' : '_'.$this->lang;
 
         if (!empty($this->searches)) {
             $options['filter']['$or'] = [];
         }
 
+        $langSuffix = $this->langSuffix;
+        $suffix = $langSuffix;
+
         foreach ($c['fields'] as $field) {
+
+            $isFieldLocalized = $this->app->helper('mputils')->isFieldLocalized($field['name'], $c['name']);
+            $suffix = $isFieldLocalized ? $langSuffix : '';
 
             $options['fields'][$field['name']] = true;
 
-            if ($this->lang != $this->defaultLang) {
+            if (!$this->isDefaultLang) {
                 $options['fields'][$field['name'].$suffix] = true;
             }
 
@@ -258,25 +273,17 @@ class Search extends \Lime\Helper {
 
                 if (isset($field['type']) && $field['type'] == 'repeater') {
 
-                    if ($this->isWhereFilterAvailable) {
-                        $options['filter']['$or'][] = ['$where' => function($doc) use ($field, $suffix) {
-                            return repeaterSearch($doc[$field['name'].$suffix]);
-                        }];
-                    } else {
-                        $options['filter']['$or'][] = [$field['name'].$suffix => ['$fn' => 'Multiplane\Helper\repeaterSearch']];
-                    }
+                    $options['filter']['$or'][] = ['$where' => function($doc) use ($field, $suffix) {
+                        return repeaterSearch($doc[$field['name'].$suffix]);
+                    }];
 
                 }
 
                 elseif (isset($field['type']) && $field['type'] == 'layout') {
 
-                    if ($this->isWhereFilterAvailable) {
-                        $options['filter']['$or'][] = ['$where' => function($doc) use ($field, $suffix) {
-                            return layoutSearch($doc[$field['name'].$suffix]);
-                        }];
-                    } else {
-                        $options['filter']['$or'][] = [$field['name'].$suffix => ['$fn' => 'Multiplane\Helper\layoutSearch']];
-                    }
+                    $options['filter']['$or'][] = ['$where' => function($doc) use ($field, $suffix) {
+                        return layoutSearch($doc[$field['name'].$suffix]);
+                    }];
 
                 }
 
@@ -319,7 +326,9 @@ class Search extends \Lime\Helper {
                     $tags = $this->fieldSearch[$field['name']];
                     if (!\is_array($tags)) $tags = [$tags];
 
-                    $options['filter'][$field['name'].$suffix] = ['$in' => $tags];
+                    if (!empty($tags)) {
+                        $options['filter'][$field['name'].$suffix] = ['$in' => $tags];
+                    }
 
                 }
 
@@ -339,10 +348,15 @@ class Search extends \Lime\Helper {
         $permalinkName = $this->fieldNames['permalink'];
         $startpageName = $this->fieldNames['startpage'];
 
+        $collectionName = $_collection['name'];
+        $collectionLabel = $collectionName;
+
         $weight = !empty($c['weight']) ? $c['weight'] : 0;
-        $label  = !empty($c['label'])  ? $c['label']
-                : (!empty($_collection['label']) ? $_collection['label']
-                    : $collection);
+
+        $labelKey = 'label' . $this->langSuffix;
+        if (!empty($this->structure[$collectionName][$labelKey])) {
+            $collectionLabel = $this->structure[$collectionName][$labelKey];
+        }
 
         $isStartpage = isset($entry[$startpageName]) && $entry[$startpageName] == true;
 
@@ -350,10 +364,10 @@ class Search extends \Lime\Helper {
             '_id'        => $entry['_id'],
             '_created'   => $entry['_created'],
             'url'        => $this->app->baseUrl(($c['route'] ?? '') . '/' . ($isStartpage ? '' : $entry[$slugName])),
-            'collection' => $label,
+            'collection' => $collectionLabel,
         ];
 
-        if ($this->app->module('multiplane')->usePermalinks) {
+        if ($this->usePermalinks) {
             $item['url'] = $entry[$permalinkName];
         }
 

@@ -153,7 +153,7 @@ $this->module('collections')->extend([
 
         // rename rules
         if ($this->app->path('#storage:collections/rules')) {
-            
+
             $rulesPath = $this->app->path('#storage:collections/rules');
 
             foreach (['create', 'read', 'update', 'delete'] as $method) {
@@ -325,7 +325,7 @@ $this->module('collections')->extend([
                     }
 
                     if (!isset($entry[$field['name']])) {
-                        $value = $field['default'] ?? null;
+                        $value = !empty($field['default']) ? $field['default'] : null;
                     } else {
                         $value = $entry[$field['name']];
                     }
@@ -334,37 +334,33 @@ $this->module('collections')->extend([
 
                         case 'string':
                         case 'text':
-                            $value = (string)$value;
+                            $value = strlen($value) ? (string)$value : null;
                             break;
 
                         case 'boolean':
-
                             if ($value === 'true' || $value === 'false') {
-                                $value = $value === 'true' ? true:false;
+                                $value = $value === 'true' ? true : false;
                             } else {
                                 $value = $value ? true:false;
                             }
-
                             break;
 
                         case 'number':
-                            $value = is_numeric($value) ? $value:0;
+                            $value = is_numeric($value) ? $value : null;
                             break;
 
                         case 'url':
-                            $value = filter_var($value, FILTER_VALIDATE_URL) ? $value:null;
+                            $value = filter_var($value, FILTER_VALIDATE_URL) ? $value : null;
                             break;
 
                         case 'email':
-                            $value = $this->app->helper('utils')->isEmail($value) ? $value:null;
+                            $value = $this->app->helper('utils')->isEmail($value) ? $value : null;
                             break;
 
                         case 'password':
-
                             if ($value) {
                                 $value = $this->app->hash($value);
                             }
-
                             break;
                     }
 
@@ -529,7 +525,7 @@ $this->module('collections')->extend([
 
             $languages = [];
 
-            foreach($this->app->retrieve('config/languages', []) as $key => $val) {
+            foreach ($this->app->retrieve('config/languages', []) as $key => $val) {
                 if (is_numeric($key)) $key = $val;
                 $languages[] = $key;
             }
@@ -642,7 +638,7 @@ function cockpit_populate_collection(&$items, $maxlevel = -1, $level = 0, $field
     foreach ($items as $k => &$v) {
 
         if (!is_array($v)) {
-            continue; 
+            continue;
         }
 
         if (is_array($items[$k])) {

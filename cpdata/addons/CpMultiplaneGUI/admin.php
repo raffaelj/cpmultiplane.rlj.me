@@ -34,17 +34,20 @@ $this->on('admin.init', function() {
         });
     }
 
+    $config = $this->module('cpmultiplanegui')->getConfig();
+
+    $currentProfile = $config['profile'] ?? null;
+    $profileExists =  $currentProfile && $this->module('cpmultiplanegui')->exists($currentProfile);
+
     // add to modules menu
     if ($this->module('cockpit')->hasaccess('cpmultiplanegui', 'manage')) {
         $this->helper('admin')->addMenuItem('modules', [
             'label'  => 'Multiplane',
             'icon'   => 'cpmultiplanegui:icon.svg',
-            'route'  => '/multiplane',
+            'route'  => '/multiplane' . ($profileExists ? "/profile/{$currentProfile}" : ''),
             'active' => strpos($this['route'], '/multiplane') === 0
         ]);
     }
-
-    $config = $this->module('cpmultiplanegui')->getConfig();
 
     // display "Show in menu" toggle
     $this->on('collections.settings.aside', function() {
@@ -107,6 +110,29 @@ $this->on('admin.init', function() {
 
             }
 
+            $forms = [];
+            if (isset($this->modules['forms'])) {
+
+              if ($this->module('cockpit')->hasaccess('forms', 'manage')) {
+
+                $_forms = $this->module('forms')->forms();
+
+                foreach($_forms as $s) {
+                    if (isset($s['multiplane']['gui_in_header'])
+                      && $s['multiplane']['gui_in_header'] === true) {
+
+                        $forms[] = [
+                            'name' => $s['name'],
+                            'label' => !empty($s['label']) ? $s['label'] : $s['name'],
+                            'icon' => $s['icon'] ?? '',
+                            'color' => $s['color'] ?? '',
+                            'active' => preg_match('#^/forms/entries/'.$s['name'].'$#', $this['route']),
+                        ];
+                    }
+                }
+              }
+            }
+
             // add assetsmanager to custom icons
             $other = [];
 
@@ -118,7 +144,7 @@ $this->on('admin.init', function() {
                 'active' => strpos($this['route'], '/assetsmanager') === 0
             ];
 
-            $this->renderView('cpmultiplanegui:views/partials/nav.php', compact('collections', 'singletons', 'other'));
+            $this->renderView('cpmultiplanegui:views/partials/nav.php', compact('collections', 'singletons', 'forms', 'other'));
 
         });
 

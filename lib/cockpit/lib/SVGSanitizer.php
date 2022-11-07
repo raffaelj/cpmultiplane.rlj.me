@@ -3,7 +3,7 @@
 
 /**
  * Class SVGSanitizer
- * 
+ *
  * simplified/compact version of svg-sanitizer - https://github.com/darylldoyle/svg-sanitizer by Daryll Doyle
  *
  * @package enshrined\svgSanitize
@@ -61,7 +61,7 @@ class SVGSanitizer
      * SVGSanitizer::clean('<svg ...>')
      */
     public static function clean($svgText) {
-        
+
         $sanitizer = new static();
 
         return $sanitizer->sanitize($svgText);
@@ -74,7 +74,7 @@ class SVGSanitizer
     {
         // Load default tags/attributes
         $this->allowedAttrs = [
-            
+
             // HTML
             'accept', 'action', 'align', 'alt', 'autocomplete',
             'background', 'bgcolor', 'border',
@@ -103,7 +103,7 @@ class SVGSanitizer
             'class', 'clip', 'clip-path', 'clip-rule', 'color', 'color-interpolation', 'color-interpolation-filters', 'color-profile', 'color-rendering', 'cx', 'cy',
             'd', 'dx', 'dy', 'diffuseconstant', 'direction', 'display', 'divisor', 'dur',
             'edgemode', 'elevation', 'end',
-            'fill', 'fill-opacity', 'fill-rule', 'filter', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-variant', 'font-weight', 'fx', 'fy',
+            'fill', 'fill-opacity', 'fill-rule', 'filter', 'filterUnits', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-variant', 'font-weight', 'fx', 'fy',
             'g1', 'g2', 'glyph-name', 'glyphref', 'gradientunits', 'gradienttransform',
             'height', 'href',
             'id', 'image-rendering', 'in', 'in2',
@@ -111,7 +111,7 @@ class SVGSanitizer
             'lang', 'lengthadjust', 'letter-spacing',
             'kernelmatrix', 'kernelunitlength',
             'lighting-color', 'local',
-            'marker-end', 'marker-mid', 'marker-start', 'markerheight', 'markerunits', 'markerwidth', 'maskcontentunits', 'maskunits', 'max', 'mask', 'media', 'method', 'mode', 'min',
+            'marker-end', 'marker-mid', 'marker-start', 'markerheight', 'markerunits', 'markerwidth', 'maskcontentunits', 'maskunits', 'max', 'mask', 'mask-type', 'media', 'method', 'mode', 'min',
             'name', 'numoctaves',
             'offset', 'operator', 'opacity', 'order', 'orient', 'orientation', 'origin', 'overflow',
             'paint-order', 'path', 'pathlength', 'patterncontentunits', 'patterntransform', 'patternunits', 'points', 'preservealpha', 'preserveaspectratio',
@@ -270,7 +270,7 @@ class SVGSanitizer
     /**
      * Set XML options to use when saving XML
      * See: DOMDocument::saveXML
-     * 
+     *
      * @param int  $xmlOptions
      */
     public function setXMLOptions($xmlOptions)
@@ -281,7 +281,7 @@ class SVGSanitizer
      /**
      * Get XML options to use when saving XML
      * See: DOMDocument::saveXML
-     * 
+     *
      * @return int
      */
     public function getXMLOptions()
@@ -397,8 +397,10 @@ class SVGSanitizer
      */
     protected function setUpBefore()
     {
-        // Turn off the entity loader
-        $this->xmlLoaderValue = libxml_disable_entity_loader(true);
+        if (!version_compare(phpversion(), '8.0.0', '>=')) {
+            // Turn off the entity loader
+            $this->xmlLoaderValue = libxml_disable_entity_loader(true);
+        }
 
         // Suppress the errors because we don't really have to worry about formation before cleansing
         libxml_use_internal_errors(true);
@@ -409,8 +411,10 @@ class SVGSanitizer
      */
     protected function resetAfter()
     {
-        // Reset the entity loader
-        libxml_disable_entity_loader($this->xmlLoaderValue);
+        if (!version_compare(phpversion(), '8.0.0', '>=')) {
+            // Reset the entity loader
+            libxml_disable_entity_loader($this->xmlLoaderValue);
+        }
     }
 
     /**

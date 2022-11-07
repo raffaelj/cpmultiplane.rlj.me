@@ -15,41 +15,43 @@ class Auth extends \LimeExtra\Controller {
 
     public function check() {
 
-        if ($data = $this->param('auth')) {
+        if ($auth = $this->param('auth')) {
 
-            if (!\is_string($data['user']) || !\is_string($data['password'])) {
+            if (!isset($auth['user'], $auth['password']) || !\is_string($auth['user']) || !\is_string($auth['password'])) {
                 return ['success' => false, 'error' => 'Pre-condition failed'];
             }
 
-            if (isset($data['user']) && $this->app->helper('utils')->isEmail($data['user'])) {
-                $data['email'] = $data['user'];
-                $data['user']  = '';
+            $auth = ['user' => $auth['user'], 'password' => $auth['password']];
+
+            if (isset($auth['user']) && $this->app->helper('utils')->isEmail($auth['user'])) {
+                $auth['email'] = $auth['user'];
+                $auth['user']  = '';
             }
 
-            if (!$this->app->helper('csfr')->isValid('login', $this->param('csfr'), true)) {
-                $this->app->trigger('cockpit.authentication.failed', [$data, 'Csfr validation failed']);
-                return ['success' => false, 'error' => 'Csfr validation failed'];
+            if (!$this->app->helper('csrf')->isValid('login', $this->param('csrf'), true)) {
+                $this->app->trigger('cockpit.authentication.failed', [$auth, 'Csrf validation failed']);
+                return ['success' => false, 'error' => 'Csrf validation failed'];
             }
 
-            $user = $this->module('cockpit')->authenticate($data);
+            $user = $this->module('cockpit')->authenticate($auth);
 
-            if ($user && !$this->module('cockpit')->hasaccess('cockpit', 'backend', @$user['group'])) {
+            if ($user && !$this->module('cockpit')->hasaccess('cockpit', 'backend', $user['group'] ?? null)) {
                 $user = null;
             }
 
             if ($user) {
-                
+
                 $this->app->trigger('cockpit.authentication.success', [&$user]);
                 $this->module('cockpit')->setUser($user);
 
                 unset($user['api_key'], $user['_reset_token']);
 
             } else {
-                $this->app->trigger('cockpit.authentication.failed', [$data, 'User not found']);
+                $this->app->trigger('cockpit.authentication.failed', [$auth, 'Authentication failed']);
             }
 
             if ($this->app->request->is('ajax')) {
-                return $user ? ['success' => true, 'user' => $user] : ['success' => false, 'error' => 'User not found'];
+                return $user ? ['success' => true, 'user' => $user] : ['success' => false, 'error' => 'Authentication failed'];
             } else {
                 $this->reroute('/');
             }
@@ -102,7 +104,8 @@ class Auth extends \LimeExtra\Controller {
             $user = $this->app->storage->findOne('cockpit/accounts', $query);
 
             if (!$user) {
-                return $this->stop(['error' => $this('i18n')->get('User does not exist')], 404);
+                // "fail silently" to not allow user-name bruteforce guessing
+                return ['message' => $this('i18n')->get('Recovery email sent if user exists')];
             }
 
             $token  = uniqid('rp-'.bin2hex(random_bytes(16)));
@@ -126,7 +129,7 @@ class Auth extends \LimeExtra\Controller {
                 return $this->stop(['error' => $this('i18n')->get($response)], 404);
             }
 
-            return ['message' => $this('i18n')->get('Recovery email sent')];
+            return ['message' => $this('i18n')->get('Recovery email sent if user exists')];
         }
 
         return $this->stop(['error' => $this('i18n')->get('User required')], 412);

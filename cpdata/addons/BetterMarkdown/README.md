@@ -1,5 +1,11 @@
 # BetterMarkdown addon for Cockpit CMS
 
+**This addon is not compatible with Cockpit CMS v2.**
+
+See also [Cockpit CMS v1 docs](https://v1.getcockpit.com/documentation), [Cockpit CMS v1 repo](https://github.com/agentejo/cockpit) and [Cockpit CMS v2 docs](https://getcockpit.com/documentation/), [Cockpit CMS v2 repo](https://github.com/Cockpit-HQ/Cockpit).
+
+---
+
 Cache, task lists and ToC support for markdown conversion with [Cockpit CMS][1]
 
 This addon replaces the current [Parsedown][2] and [ParsedownExtra][3] libraries with later versions and it adds two Parsedown extensions: [ParsedownToC][4] and [ParsedownCheckbox][5].
@@ -64,13 +70,16 @@ return [
         // see: https://github.com/BenjaminHoegh/parsedownToc#configuration
         'toc' => [ 
             'selectors' => ['h2', 'h3', 'h4', 'h5', 'h6'], // omit h1 from toc
+
+            // blacklist existing ids in your frontend
+            'blacklist' => [
+                'nav', // turns to 'nav-1'
+                'top',
+            ],
+
             // array of regexes for text replacements - before heading ids are generated
-            // It can be used for blacklisting ids, but it's not failsafe.
-            // A new blacklist option will be published soon.
-            // see: https://github.com/BenjaminHoegh/parsedownToc/issues/5
             'replacements' => [ 
-                '/^nav$/' => 'nav-1',
-                '/^top$/' => 'top-1',
+                '/^old-id$/' => 'new-id',
             ],
         ],
 
@@ -159,7 +168,7 @@ Used libraries:
 
 * "erusev/parsedown-extra": "0.8.0", MIT
 * "erusev/parsedown": "^1.8.0-beta-7", MIT
-* "hoegh/parsedown-toc": "^1.3", MIT
+* "benjaminhoegh/parsedown-toc": "^1.4.2", MIT
 * "leblanc-simon/parsedown-checkbox": "^0.2.0", MIT
 
 

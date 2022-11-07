@@ -1,3 +1,3 @@
 @if(!empty($field['info']))
-    <span class="message info">@lang($field['info'])</span>
+    <span class="message info" id="{{ $field['aria']['info'] }}">{{ $field['info'] }}</span>
 @endif

@@ -64,7 +64,7 @@ $this->module('cockpit')->extend([
         if (function_exists('opcache_reset')) {
             opcache_reset();
         }
-        
+
         return ['size'=>$app->helper('utils')->formatSize($size)];
     },
 
@@ -74,7 +74,7 @@ $this->module('cockpit')->extend([
         $container = $this->app->path('#storage:').'/api.keys.php';
 
         if (file_exists($container)) {
-            
+
             $data = include($container);
             $data = @unserialize($this->app->decode($data, $this->app['sec-key']));
 
@@ -126,6 +126,7 @@ $this->module('cockpit')->extend([
             'cachefolder' => 'thumbs://',
             'src' => '',
             'mode' => 'thumbnail',
+            'mime' => null,
             'fp' => null,
             'filters' => [],
             'width' => false,
@@ -240,9 +241,12 @@ $this->module('cockpit')->extend([
             return $this->app->pathToUrl($path, true);
         }
 
-        if (!$width || !$height) {
+        if (!$width || !$height || $width == 'original' || $height == 'original') {
 
             list($w, $h, $type, $attr)  = getimagesize($path);
+
+            if ($width == 'original') $width = $w;
+            if ($height == 'original') $height = $h;
 
             if (!$width) $width = ceil($w * ($height/$h));
             if (!$height) $height = ceil($h * ($width/$w));
@@ -258,6 +262,15 @@ $this->module('cockpit')->extend([
 
         if (!in_array($mode, ['thumbnail', 'bestFit', 'resize','fitToWidth','fitToHeight'])) {
             $mode = 'thumbnail';
+        }
+
+        if ($mime) {
+
+            if (in_array($mime, ['image/gif', 'image/jpeg', 'image/png','image/webp','image/bmp'])) {
+                $ext = explode('/', $mime)[1];
+            } else {
+                $mime = null;
+            }
         }
 
         $method = $mode == 'crop' ? 'thumbnail' : $mode;
@@ -305,7 +318,7 @@ $this->module('cockpit')->extend([
                     }
                 }
 
-                $this->app->filestorage->write($thumbpath, $img->toString(null, $quality));
+                $this->app->filestorage->write($thumbpath, $img->toString($mime, $quality));
 
                 unset($img);
 

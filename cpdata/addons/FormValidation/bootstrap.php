@@ -1,14 +1,13 @@
 <?php
 /**
  * Form validator and form builder for Cockpit CMS
- * 
+ *
  * @see       https://github.com/raffaelj/cockpit_FormValidation/
  * @see       https://github.com/agentejo/cockpit/
- * 
- * @version   0.2.11
+ *
+ * @version   0.3.0
  * @author    Raffael Jesche
  * @license   MIT
- * @note      work in progress
  */
 
 $this->helpers['validator'] = 'FormValidation\\Helper\\Validator';
@@ -72,17 +71,6 @@ $app->on('forms.submit.before', function($form, &$data, $frm, &$options) {
 
     }
 
-    // custom mailer settings
-    if (!empty($frm['mailer'])) {
-
-        // overwrite mailer service
-        $this->service('mailer', function() use($frm){
-            $mailer    = new \Mailer($frm['mailer']['transport'] ?? 'mail', $frm['mailer']);
-            return $mailer;
-        });
-
-    }
-
     // add altMessage
     // $options['altMessage'] = "...";
 
@@ -141,6 +129,84 @@ $app->module('formvalidation')->extend([
 
     },
 
+]);
+
+// overwrite default submit method of forms module to change email_forward via env variable
+$this->module('forms')->extend([
+
+    'submit' => function($form, $data, $options = []) {
+
+        $frm = $this->form($form);
+
+        if (!$frm) {
+            return false;
+        }
+
+        // custom form validation
+        if ($this->app->path("#config:forms/{$form}.php") && false===include($this->app->path("#config:forms/{$form}.php"))) {
+            return false;
+        }
+
+        $this->app->trigger('forms.submit.before', [$form, &$data, $frm, &$options]);
+
+        if (isset($frm['email_forward']) && $frm['email_forward']) {
+
+            if (!empty(getenv('EMAIL_FORWARD'))) {
+                $frm['email_forward'] = getenv('EMAIL_FORWARD');
+            }
+
+            $emails          = array_map('trim', explode(',', $frm['email_forward']));
+            $filtered_emails = [];
+
+            foreach ($emails as $to){
+
+                // Validate each email address individually, push if valid
+                if ($this->app->helper('utils')->isEmail($to)){
+                    $filtered_emails[] = $to;
+                }
+            }
+
+            if (count($filtered_emails)) {
+
+                $frm['email_forward'] = implode(',', $filtered_emails);
+
+                // There is an email template available
+                if ($template = $this->app->path("#config:forms/emails/{$form}.php")) {
+
+                    $body = $this->app->renderer->file($template, ['data' => $data, 'frm' => $frm], false);
+
+                // Prepare template manually
+                } else {
+
+                    $body = [];
+
+                    foreach ($data as $key => $value) {
+                        $body[] = "<b>{$key}:</b>\n<br>";
+                        $body[] = (is_string($value) ? $value:json_encode($value))."\n<br>";
+                    }
+
+                    $body = implode("\n<br>", $body);
+                }
+
+                $formname = isset($frm['label']) && trim($frm['label']) ? $frm['label'] : $form;
+
+                try {
+                    $response = $this->app->mailer->mail($frm['email_forward'], $options['subject'] ?? "New form data for: {$formname}", $body, $options);
+                } catch (\Exception $e) {
+                    $response = $e->getMessage();
+                }
+            }
+        }
+
+        if (isset($frm['save_entry']) && $frm['save_entry']) {
+            $entry = ['data' => $data];
+            $this->save($form, $entry);
+        }
+
+        $this->app->trigger('forms.submit.after', [$form, &$data, $frm]);
+
+        return (isset($response) && $response !== true) ? ['error' => $response, 'data' => $data] : $data;
+    }
 ]);
 
 // ADMIN

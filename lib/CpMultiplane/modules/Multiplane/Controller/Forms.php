@@ -8,9 +8,9 @@ class Forms extends \LimeExtra\Controller {
 
         // stand-alone form page, e. g: example.com/form/form_name
         // or if multilingual example.com/en/form/form_name
-        // useful as fallback for submit redirects if HTTP_REFERER is disabled
+        // also useful as fallback for submit redirects if HTTP_REFERER is missing
 
-        if (!mp()->formStandalone) return false;
+        if (!$this->app->module('multiplane')->formStandalone) return false;
 
         if (!empty($params[':splat'][0])) {
 
@@ -28,29 +28,37 @@ class Forms extends \LimeExtra\Controller {
 
             $form = $params[':splat'][0];
 
-            // init + load i18n
-            $lang = $this('i18n')->locale;
-            if ($translationspath = $this->path("mp_config:i18n/{$lang}.php")) {
-                $this('i18n')->load($translationspath, $lang);
+            $formsInUse = $this->app->module('multiplane')->use['forms'] ?? [];
+            if (!in_array($form, $formsInUse)) return false;
+
+            $_form = $this->app->module('forms')->form($form);
+
+            $formLang = $_form['multiplane']['language'] ?? '';
+            if (!empty($formLang) && $formLang != $this->app->module('multiplane')->lang) {
+                return false;
             }
 
-            // load site data from site singleton
-            $this->app->module('multiplane')->getSite();
-
-            // add page to breadcrumbs
-            $breadcrumbs = mp()->breadcrumbs;
-            $breadcrumbs[] = ucfirst($form);
-            mp()->breadcrumbs = $breadcrumbs;
+            // add global viewvars
+            $site = $this->app->module('multiplane')->getSite();
+            $page = [
+                'title' => $_form['label'] ?? ucfirst($form),
+            ];
+            $this->app->viewvars['page'] = $page;
+            $this->app->viewvars['site'] = $site;
 
             // hide from search engines
             $this->app->on('multiplane.seo', function(&$seo) use($form) {
                 if (!isset($seo['robots'])) $seo['robots'] = [];
                 $seo['robots'][] = 'noindex';
                 $seo['robots'][] = 'nofollow';
-                $seo['canonical'] = $this->baseUrl("/form/$form");
+                $seo['canonical'] = $this->getSiteUrl() . $this->baseUrl("/form/$form");
             });
 
-            return $this->form($form);
+            $options = [
+                'headline' => $page['title'],
+            ];
+
+            return $this->render('views:layouts/form.php', compact('form', 'options'));
         }
 
         return false;
@@ -64,7 +72,7 @@ class Forms extends \LimeExtra\Controller {
         // 2: form has errors/notices
         // 3: success
 
-        $sessionName = mp()->formSessionName;
+        $sessionName = $this->app->module('multiplane')->formSessionName;
 
         // lazy check for get param to avoid starting a session without user input
         $submit = isset($_GET['submit']) ? (int) $_GET['submit'] : false;
@@ -72,7 +80,7 @@ class Forms extends \LimeExtra\Controller {
             $this('session')->init($sessionName);
         }
 
-        $fields = mp()->getFormFields($form);
+        $fields = $this->app->module('multiplane')->getFormFields($form);
 
         if (!$fields) return false;
 
@@ -80,7 +88,7 @@ class Forms extends \LimeExtra\Controller {
         $notice  = false;
 
         // hide messages if session is expired and user calls the url again
-        $expire = mp()->formSessionExpire;
+        $expire = $this->app->module('multiplane')->formSessionExpire;
 
         $call     = $this('session')->read("mp_form_call_$form", null);
         $response = $this('session')->read("mp_form_response_$form", null);
@@ -95,23 +103,28 @@ class Forms extends \LimeExtra\Controller {
         $notice  =  $call && isset($_GET['submit']) && $_GET['submit'] == 2;
         $success = !$call && isset($_GET['submit']) && $_GET['submit'] == 3;
 
+        $_form = $this->app->module('forms')->form($form);
+        $customFormMessages = isset($_form['formMessages']) && is_array($_form['formMessages']) ? $_form['formMessages'] : [];
+
+        $formMessages = $this->app->module('multiplane')->formMessages;
+        foreach ($customFormMessages as $k => $v) {
+            if (is_string($v) && !empty(trim($v))) $formMessages[$k] = $v;
+        }
+
         $message = [
-            'success' => $success ? mp()->formMessages['success'] : '',
-            'notice'  => $notice  ? mp()->formMessages['notice']  : '',
-            'error'   => mp()->formatErrorMessage($form),
+            'success' => $success ? $formMessages['success'] : '',
+            'notice'  => $notice  ? $formMessages['notice']  : '',
+            'error'   => $this->app->module('multiplane')->formatErrorMessage($form),
+            'error_generic' => $formMessages['error_generic'],
         ];
 
-        // if form is a standalone page
-        $page = ['title' => ucfirst($form)];
-        $site = mp()->site;
-
-        return $this->render('views:partials/form.php', compact('page', 'form', 'fields', 'message', 'options'));
+        return $this->render('views:partials/form.php', compact('form', 'fields', 'message', 'options', '_form'));
 
     } // end of form()
 
     public function submit($form = '') {
 
-        $sessionName = mp()->formSessionName;
+        $sessionName = $this->app->module('multiplane')->formSessionName;
         $submitQuery = '';
 
         $this('session')->init($sessionName);
@@ -139,21 +152,23 @@ class Forms extends \LimeExtra\Controller {
 
         // cast user input and remove optional id prefix before sending it to validator
         $postedData = [];
-        $prefix = mp()->formIdPrefix;
-        $formSubmitButtonName = mp()->formSubmitButtonName;
+        $prefix = $this->app->module('multiplane')->formIdPrefix;
+        $formSubmitButtonName = $this->app->module('multiplane')->formSubmitButtonName;
 
-        $strlen = strlen($prefix);
-        foreach($_POST[$form] as $key => $val) {
+        foreach($_POST[$prefix.$form] as $key => $val) {
+
             if ($key == $formSubmitButtonName) continue;
 
-            if (substr($key, 0, $strlen) == $prefix) {
-                $k = substr($key, $strlen);
-            } else {$k = $key;}
-
-            $postedData[$k] = htmlspecialchars(trim($val));
+            if (is_string($val)) {
+                $postedData[$key] = htmlspecialchars(trim($val));
+            }
+            else {
+                $postedData[$key] = $val;
+            }
+            // TODO: trim array values (multipleselect field)
         }
-        
-        if (mp()->formSendReferer) {
+
+        if ($this->app->module('multiplane')->formSendReferer) {
             $postedData['referer'] = $refererUrl;
         }
 
@@ -191,7 +206,7 @@ class Forms extends \LimeExtra\Controller {
             $submitQuery = '?submit=2';
         }
 
-        $anchor = mp()->formIdPrefix.$form;
+        $anchor = $this->app->module('multiplane')->formIdPrefix.$form;
 
         $this->reroute($refererUrl.$submitQuery.'#'.$anchor);
 

@@ -96,12 +96,18 @@ class Validator extends \Lime\Helper {
                 && array_key_exists($field['name'], $this->data)) {
 
                 $equals[$field['name']] = $field['options']['validate']['equals'];
+                if (is_string($equals[$field['name']])) {
+                    $equals[$field['name']] = [$equals[$field['name']]];
+                }
             }
 
             if (isset($field['options']['validate']['equalsi'])
                 && array_key_exists($field['name'], $this->data)) {
 
                 $equalsi[$field['name']] = $field['options']['validate']['equalsi'];
+                if (is_string($equalsi[$field['name']])) {
+                    $equalsi[$field['name']] = [$equalsi[$field['name']]];
+                }
             }
 
         }
@@ -122,12 +128,12 @@ class Validator extends \Lime\Helper {
                         return;
                     }
                     else {
-                        $this->error[$honeypotName] = $honeypotOptions['response'];
+                        $this->error['honeypot'] = $honeypotOptions['response'];
                     }
 
                 }
                 else {
-                    $this->error[$honeypotName] = $this('i18n')->get('Hello spambot');
+                    $this->error['honeypot'] = $this('i18n')->get('Hello spambot');
                 }
 
                 return;
@@ -198,20 +204,27 @@ class Validator extends \Lime\Helper {
 
             // 5. equals
             if (isset($equals[$name])) {
-
-                if ($this->data[$name] != $equals[$name]) {
-
-                    $this->error[$name][] = $this('i18n')->get("doesn't match");
-
+                $foundMatch = false;
+                foreach ($equals[$name] as $v) {
+                    if ($this->data[$name] == $v) {
+                        $foundMatch = true;
+                        break;
+                    }
                 }
-
+                if (!$foundMatch) {
+                    $this->error[$name][] = $this('i18n')->get("doesn't match");
+                }
             }
             if (isset($equalsi[$name])) {
-
-                if (strtolower($this->data[$name]) != strtolower($equalsi[$name])) {
-
+                $foundMatch = false;
+                foreach ($equalsi[$name] as $v) {
+                    if (strtolower($this->data[$name]) == strtolower($v)) {
+                        $foundMatch = true;
+                        break;
+                    }
+                }
+                if (!$foundMatch) {
                     $this->error[$name][] = $this('i18n')->get("doesn't match");
-
                 }
 
             }

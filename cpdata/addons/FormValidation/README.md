@@ -1,5 +1,11 @@
 # Form Validation Addon for Cockpit
 
+**This addon is not compatible with Cockpit CMS v2.**
+
+See also [Cockpit CMS v1 docs](https://v1.getcockpit.com/documentation), [Cockpit CMS v1 repo](https://github.com/agentejo/cockpit) and [Cockpit CMS v2 docs](https://getcockpit.com/documentation/), [Cockpit CMS v2 repo](https://github.com/Cockpit-HQ/Cockpit).
+
+---
+
 A form validator and form builder for [Cockpit CMS](https://github.com/agentejo/cockpit)
 
 Work in progress! Feel free to contribute with code, bug reports or feature requests.
@@ -172,3 +178,7 @@ Create a custom mail template in `config/forms/emails/formname.php` to use the s
 ![honeypot](https://user-images.githubusercontent.com/13042193/45387248-cc1fba80-b615-11e8-9ce6-81fc2993078a.png)
 
 ![responses](https://user-images.githubusercontent.com/13042193/45387249-cc1fba80-b615-11e8-95ea-f1bd4d9f8b35.png)
+
+## Credits and third party libraries
+
+Icons are from Cockpit CMS v2, (c) Artur Heinze, MIT License

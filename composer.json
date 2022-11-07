@@ -9,10 +9,18 @@
             "homepage": "https://www.rlj.me"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/raffaelj/parsedownToc",
+            "no-api": true
+        }
+    ],
     "require": {
         "raffaelj/cpmultiplane": "^0.3.1",
         "aheinze/cockpit": "^0.12.2",
         "raffaelj/cockpit-imageresize": "^0.2.2",
+        "benjaminhoegh/parsedown-toc": "dev-fix-compatibility-with-1.8.0-beta-7",
         "raffaelj/cockpit-bettermarkdown": "^0.1.1",
         "raffaelj/cockpit-rljutils": "^0.1.6",
         "raffaelj/cockpit-cpmultiplanegui": "^0.3.0"
@@ -21,6 +29,10 @@
         "vendor-dir": "lib/vendor",
         "preferred-install": {
             "*": "dist"
+        },
+        "allow-plugins": {
+            "composer/installers": true,
+            "oomphinc/composer-installers-extender": true
         }
     },
     "extra": {

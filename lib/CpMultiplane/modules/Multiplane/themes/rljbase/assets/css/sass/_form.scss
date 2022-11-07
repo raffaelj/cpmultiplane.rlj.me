@@ -8,11 +8,12 @@ $color-black:       #000 !default;
 $color-dark:        #222 !default;
 $color-grey:        #ccc !default;
 $color-shadow:      #0c0c0c !default;
+$color-white-transp:       rgba(255,255,255,.9) !default;
 $color-black-transp-light: rgba(0,0,0,.2) !default;
 
 // form colors
-$color-main:        #8d9444 !default;
-$color-main-dark:   #ae5e69 !default;
+$color-link:        #8d9444 !default;
+// $color-main-dark:   #ae5e69 !default;
 
 $color-text:        #000000 !default;
 $color-text-light:  #999 !default;
@@ -21,38 +22,37 @@ $color-button-text: $color-white !default;
 
 $color-alarm:       #AD000E !default;
 $color-error:       #d50f2c !default;
+$color-success:     #00af40 !default;
 
-$color-input:       rgba(255,255,255,.9) !default;
+$color-input:       $color-white-transp !default;
 $color-input-hover: $color-white !default;
 $color-info:        transparent !default;
 
 $color-fieldset-border: $color-text-dark !default;
 
 form {
-    * {
-        @include box-sizing(border-box);
+    font-size: 1em;
+    margin: 1em 0;
+    &:first-child {
+        margin-top: 0;
     }
-    margin: 1rem 0;
-}
-
-fieldset {
-    border: 1px solid $color-fieldset-border;
-    border-radius: $border-radius;
-    padding: .5rem;
-    text-align: center;
+    &:last-child {
+        margin-bottom: 0;
+    }
     * {
         text-align: left;
+        @include box-sizing(border-box);
     }
     > .message.error {
-        margin-bottom: .5rem;
+        margin-bottom: .5em;
     }
     > div {
         display: inline-block;
         position: relative;
         width: 100%;
-        margin: 0 0 .5rem;
-        padding-left: .2rem;
-        padding-right: .2rem;
+        margin: 0 0 .5em;
+        padding-left: .2em;
+        padding-right: .2em;
         vertical-align: top;
         &:last-of-type { // contains submit button
             text-align: center;
@@ -61,15 +61,13 @@ fieldset {
             float: left; // fix inline white spaces
         }
         > label {
-/*             position: absolute; */
-/*             top: 0rem; */
             display: block;
-            font-size: .9rem;
-            transition: 0.2s;
+            font-size: 1em;
+            font-weight: bolder;
         }
         .info {
-            padding: .2rem 0;
-            font-size: .9rem;
+            padding: .2em 0;
+            font-size: .9em;
             background-color: $color-info;
             border-radius: $border-radius;
         }
@@ -77,47 +75,42 @@ fieldset {
 }
 
 legend {
-    padding: 0 .5rem;
+    padding: 0 .5em;
 }
 
 input, textarea {
     background-color: $color-input;
-    // &[required] {
-        // + label:after {
-            // content: "*";
-        // }
-    // }
+    font-size: inherit;
 }
 
 input {
     display: block;
     width: 100%;
-    height: 2rem;
+    height: 2em;
     margin: inherit 0 0;
     padding: 5px;
-    line-height: 1rem;
+    line-height: 1em;
     border: 1px solid $color-grey;
     border-radius: $border-radius;
     &:hover, &:focus {
-        border: 1px solid $color-grey;
+        border: 1px solid $color-link;
         background-color: $color-input-hover;
-        + label {
-            margin-left: .2rem;
-        }
-    }
-    + label {
-        + .message.error {
-          border-top-left-radius: 0;
-          border-top-right-radius: 0;
-          border-top-width: 0;
-          padding-top: .2rem;
-        }
+
     }
     &:invalid {
-        // to do...
+        // TODO
     }
     &:valid {
-        // to do...
+        // TODO
+    }
+}
+
+input, input + label {
+    + .message.error {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        border-top-width: 0;
+        padding-top: .2em;
     }
 }
 
@@ -133,57 +126,57 @@ input[type=checkbox], input[type=radio] {
     + label {
         display: block;
         position: relative;
-        margin-left: 1.2rem;
+        margin-left: 1.2em;
         &:before {
-            content:'';
+            content: '';
             position: absolute;
             top: 50%;
-            left: -1.2rem;
-            width: 1rem;
-            height: 1rem;
-            margin-top: -.5rem;
+            left: -1.2em;
+            width: 1em;
+            height: 1em;
+            margin-top: -.5em;
             padding: 0;
             border: 1px solid #ccc;
             border-radius: 2px;
-            margin-right: .2rem;
+            margin-right: .2em;
             box-sizing: border-box;
         }
     }
     &:hover, &:focus, &:active {
         + label:before {
-            border-color: $color-main;
-            @include box-shadow(0 0 1em $color-main); // better accesibility and visibility
+            border-color: $color-link;
+            @include box-shadow(0 0 1em $color-link); // better accesibility and visibility
         }
     }
     &:checked {
         + label:before {
-            
+            // TODO
         }
         + label:after {
             content: '';
             position: absolute;
             top: 50%;
-            left: -1rem;
-            width: .6rem;
-            height: .6rem;
-            margin-top: -.3rem;
-            background-color: $color-main;
+            left: -1em;
+            width: .6em;
+            height: .6em;
+            margin-top: -.3em;
+            background-color: $color-link;
         }
         &.checkbox-icon-checked { // experimental
             + label:after {
                 content: '';
                 position: absolute;
                 top: 0;
-                left: -1.2rem;
-                width: .8rem;
-                height: .5rem;
+                left: -1.2em;
+                width: .8em;
+                height: .5em;
                 margin: 0;
-                border-width: 0 0 .4rem .4rem;
+                border-width: 0 0 .4em .4em;
                 border-style: solid;
                 border-top-color: transparent;
                 border-right-color: transparent;
                 background-color: transparent;
-                color: $color-main;
+                color: $color-link;
                 transform: rotate(-45deg);
                 transform-origin: 50% 50%;
                 -webkit-transform-style: preserve-3d; // fix cutted borders in FF
@@ -191,6 +184,7 @@ input[type=checkbox], input[type=radio] {
         }
     }
 }
+
 input[type=radio] + label:before,
 input[type=radio]:checked + label:after {
     border-radius: 50%;
@@ -198,9 +192,9 @@ input[type=radio]:checked + label:after {
 
 input[type=submit], input[type=reset], input[type=button], button {
     width: auto;
-    margin: .1rem auto;
-    padding: .2rem .5rem;
-    font-size: 1rem;
+    margin: .1em auto;
+    padding: .2em .5em;
+    font-size: 1em;
     color: $color-button-text;
     background-color: $color-link;
     border: none;
@@ -219,15 +213,13 @@ input[type=submit], input[type=reset], input[type=button], button {
         }
     }
 }
+
 input, button {
     &[type=submit] {
         background-color: $color-link;
         &:hover, &:focus {
             background-color: $color-link-hover;
         }
-        // + p {
-            // margin-top:.5rem;
-        // }
     }
     &[type=button] {
         background-color: $color-link;
@@ -245,6 +237,7 @@ input, button {
         background-color: $color-grey;
         color: $color-darker;
         cursor: default;
+
         &:hover, &:focus {
             background-color: $color-grey;
         }
@@ -254,70 +247,57 @@ input, button {
 textarea {
     display: block;
     width: 100%;
-    height: 10rem;
-    padding: .5rem;
+    height: 10em;
+    padding: .5em;
     border-radius: $border-radius;
     border: 1px solid $color-grey;
     font-family: $font;
+
     &:hover, &:focus{
+        border: 1px solid $color-link;
         background-color: $color-input-hover;
         + label{
-            margin-left: .2rem;
+            margin-left: .2em;
         }
     }
 }
 
-// button {
-    // border:none;
-// }
-
-
-//// label positioning
-
-input, textarea {
-/*     margin-top: 1.5rem; */
-}
-label {
-    + input, + textarea {
-        margin-top: inherit;
-    }
-    // reverse pretty checkboxes if label doesn't follow input
-    input[type=checkbox], input[type=radio]/*, + input[type=checkbox], + input[type=radio]*/ {
-        position: static;
-        display: inline;
-        opacity: 1;
-        margin: 0;
-    }
-}
-
-// reset margin from absolute positioned labels
-// label {
-    // + input {
-        // margin-top:0;
-    // }
-// }
-
-//// messages
-
 .message {
-    font-size: .9rem;
+    font-size: 1em;
     text-align: left;
-    &.error{
+    &.error {
         border: 1px solid $color-error;
-        margin: 0 .2rem;
-        padding: .5rem;
+        margin: 0 .2em;
+        padding: .5em;
         border-radius: $border-radius;
-        line-height: 1.2rem;
+        line-height: 1.2em;
+        .icon-close {
+            color: $color-error;
+            width: 0.8em;
+            height: 0.8em;
+            background-color: transparent;
+            margin-right: 0.4em;
+            font-size: 0.8em;
+            vertical-align: baseline;
+        }
     }
-    &.success{
-        font-size: 1.1rem;
-        border: .5rem solid $color-link-hover;
-        padding: 1rem .5rem;
+    &.success {
+        font-size: 1em;
+        border: .5em solid $color-success;
+        padding: 1em .5em;
         border-radius: $border-radius;
         text-align: center;
-        margin: 1rem 0.2rem;
+        margin: 1em 0.2em;
+        .icon-checked {
+            color: $color-success;
+            background-color: transparent;
+            font-size: 1.2em;
+            height: 1em;
+            width: 1.5em;
+            margin-right: 0.2em;
+        }
     }
-    &.alarm{
+    &.alarm {
         color: $color-alarm;
         border: 2px solid $color-alarm;
     }

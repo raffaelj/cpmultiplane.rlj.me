@@ -1,6 +1,6 @@
 {
     "name": "cockpit-rljutils",
-    "version": "0.1.2",
+    "version": "0.1.6",
     "author": "Raffael Jesche",
     "homepage": "https://github.com/raffaelj/cockpit_rljUtils",
     "license": "MIT",
@@ -12,6 +12,6 @@
         "watch:sass": "npm run build:sass && npm run build:sass -- -w"
     },
     "devDependencies": {
-        "node-sass": "^4.13.1"
+        "node-sass": "^7.0.1"
     }
 }

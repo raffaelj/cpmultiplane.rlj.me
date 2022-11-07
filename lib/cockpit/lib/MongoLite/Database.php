@@ -290,6 +290,10 @@ class UtilArrayQuery {
 
                     $d = '$document';
 
+                    if (\strpos($key, '(') !== false || \strpos($key, '"') !== false || \strpos($key, "'") !== false) {
+                        throw new \InvalidArgumentException('Unallowed characters used in filter keys');
+                    }
+
                     if (\strpos($key, '.') !== false) {
 
                         $keys = \explode('.', $key);
@@ -538,7 +542,7 @@ function createMongoDbLikeId() {
     // Building binary data.
     $bin = \sprintf(
         '%s%s%s%s',
-        \pack('N', $timestamp),
+        \pack('N', $timestamp * 10000),
         \substr(md5(uniqid()), 0, 3),
         \pack('n', $processId),
         \substr(\pack('N', $id), 1, 3)

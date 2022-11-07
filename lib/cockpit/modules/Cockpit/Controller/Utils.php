@@ -16,14 +16,23 @@ class Utils extends \Cockpit\AuthController {
 
         \session_write_close(); // improve concurrency loading
 
+        $mime = $this->param('mime', 'auto');
+
+        if ($mime == 'auto' && strpos($this->app->request->headers['Accept'] ?? '', 'image/webp') !== false) {
+            $gdinfo = \gd_info();
+            $mime = isset($gdinfo['WebP Support']) && $gdinfo['WebP Support'] ? 'image/webp' : 'auto';
+        }
+
+
         $options = [
             'src' => $this->param('src', false),
             'fp' => $this->param('fp', null),
             'mode' => $this->param('m', 'thumbnail'),
+            'mime' => $mime,
             'filters' => (array) $this->param('f', []),
             'width' => intval($this->param('w', null)),
             'height' => intval($this->param('h', null)),
-            'quality' => intval($this->param('q', 85)),
+            'quality' => intval($this->param('q', 80)),
             'rebuild' => intval($this->param('r', false)),
             'base64' => intval($this->param('b64', false)),
             'output' => intval($this->param('o', false)),
@@ -45,7 +54,7 @@ class Utils extends \Cockpit\AuthController {
     }
 
     public function getCacheSize() {
-        
+
         \session_write_close();
 
         $size = 0;
@@ -123,7 +132,7 @@ class Utils extends \Cockpit\AuthController {
         }
 
         $meta = $this->app->helper('admin')->lockResourceId($resourceId);
-        
+
         return $meta;
     }
 
@@ -188,7 +197,7 @@ class Utils extends \Cockpit\AuthController {
     public function stopJobRunner() {
 
         \session_write_close();
-        
+
         $this->app->helper('async')->exec("cockpit()->helper('jobs')->stopRunner();");
         sleep(3);
         return ['running' => $this->app->helper('jobs')->isRunnerActive()];
