@@ -47,7 +47,7 @@ return [
     ],
 
     'bettermarkdown' => [
-//         'cache' => false,
+        // 'cache' => false,
         'cached_toc_format' => 'tree',
         'tree_toc' => [
             'replace_keys' => [
@@ -57,14 +57,16 @@ return [
         ],
         'toc' => [
             'selectors' => ['h2', 'h3', 'h4', 'h5', 'h6'],
-            'replacements' => [
-                '/^nav$/' => 'nav-1',
-                '/^top$/' => 'top-1',
-                '/^main$/' => 'main-1',
-                '/^(?:-|_)*(?:privacy)(?:\s|-)(?:notice)/i' => 'id_privacy-notice',
-                '/^loadExternalVideos$/' => 'loadExternalVideos-1',
-                '/^mp_form/' => 'id_mp_form',
+            'blacklist' => [
+                'nav',
+                'top',
+                'main',
+                'privacy-notice',
+                'loadexternalvideos',
             ],
+//             'replacements' => [
+//                 '/^mp_form/' => 'id_mp_form',
+//             ],
         ],
     ],
 
