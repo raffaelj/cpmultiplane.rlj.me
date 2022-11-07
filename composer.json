@@ -1,6 +1,6 @@
 {
     "name": "raffaelj/cpmultiplane-docs",
-    "description": "Skeleton to use CpMultiplane and Cockpit CMS as libraries with a clean root directory",
+    "description": "Documentation of CpMultiplane, based on cpmp-lib-skeleton",
     "type": "project",
     "license": "MIT",
     "authors": [
@@ -10,12 +10,12 @@
         }
     ],
     "require": {
-        "raffaelj/cpmultiplane": "dev-master as 0.3.0-dev",
-        "aheinze/cockpit": "dev-next as 0.11.3-dev",
-        "raffaelj/cockpit-imageresize": "^0.2.1",
-        "raffaelj/cockpit-bettermarkdown": "dev-master",
-        "raffaelj/cockpit-rljutils": "^0.1.4",
-        "raffaelj/cockpit-cpmultiplanegui": "dev-master as 0.2.3-dev"
+        "raffaelj/cpmultiplane": "^0.3.1",
+        "aheinze/cockpit": "^0.12.2",
+        "raffaelj/cockpit-imageresize": "^0.2.2",
+        "raffaelj/cockpit-bettermarkdown": "^0.1.1",
+        "raffaelj/cockpit-rljutils": "^0.1.6",
+        "raffaelj/cockpit-cpmultiplanegui": "^0.3.0"
     },
     "config": {
         "vendor-dir": "lib/vendor",
