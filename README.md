@@ -35,8 +35,13 @@ stop: `docker-compose down`
 ```bash
 ssh user@host
 cd ~/html
-#git clone https://github.com/raffaelj/cpmultiplane.rlj.me.git .
-git clone https://codeberg.org/raffaelj/cpmultiplane.rlj.me.git .
+
+# use Github url by default
+git clone https://github.com/raffaelj/cpmultiplane.rlj.me.git .
+
+# I will move to Codeberg in the future, but right now the development stays
+# on Github and the repos might not be in sync
+#git clone https://codeberg.org/raffaelj/cpmultiplane.rlj.me.git .
 ```
 
 ### update
