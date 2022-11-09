@@ -26,7 +26,9 @@ $this->helper('admin')->addAssets([
 $this->bind('/install',  function() {return 'nice try ;-)';});
 $this->bind('/install/', function() {return 'nice try ;-)';});
 
-$this->bind('/auth/*', function() {$this->stop('Accounts are disabled', 412);});
+$this->bind('/auth/*', function() {
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="robots" content="noindex,nofollow" /></head><body>Accounts are disabled</body></html>';
+});
 
 foreach(['/accounts', '/accounts/*'] as $route) {
     $this->bind($route, function() {
